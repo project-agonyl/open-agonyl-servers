@@ -55,6 +55,9 @@ func (s *loginServerSession) Handle() {
 		if s.account != nil {
 			s.server.RemoveLoggedInUser(s.account.Username)
 		}
+
+		close(s.done)
+		s.wg.Wait()
 	}()
 	for {
 		var buf bytes.Buffer
@@ -93,8 +96,6 @@ func (s *loginServerSession) Send(data []byte) error {
 }
 
 func (s *loginServerSession) Close() error {
-	close(s.done)
-	s.wg.Wait()
 	if s.conn != nil {
 		return s.conn.Close()
 	}

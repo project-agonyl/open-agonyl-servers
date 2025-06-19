@@ -54,6 +54,8 @@ func (s *brokerSession) ID() uint32 {
 func (s *brokerSession) Handle() {
 	defer func() {
 		s.server.RemoveSession(s.id)
+		close(s.done)
+		s.wg.Wait()
 	}()
 
 	for {
@@ -82,8 +84,6 @@ func (s *brokerSession) Handle() {
 }
 
 func (s *brokerSession) Close() error {
-	close(s.done)
-	s.wg.Wait()
 	if s.conn != nil {
 		return s.conn.Close()
 	}
