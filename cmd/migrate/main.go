@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"embed"
+	"errors"
 	"os"
 
 	"github.com/golang-migrate/migrate/v4"
@@ -60,6 +61,11 @@ func main() {
 
 	err = m.Up()
 	if err != nil {
+		if errors.Is(err, migrate.ErrNoChange) {
+			logger.Info("no migrations to run")
+			os.Exit(0)
+		}
+
 		logger.Error("migrate up error", shared.Field{
 			Key:   "error",
 			Value: err,

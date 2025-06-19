@@ -31,6 +31,7 @@ func NewServer(
 			NewSession:   newLoginServerSession,
 			UidGenerator: shared.NewUidGenerator(0),
 			Logger:       logger,
+			Sessions:     shared.NewSafeMap[uint32, network.TCPServerSession](),
 		},
 		cacheService: cacheService,
 		dbService:    dbService,

@@ -18,10 +18,11 @@ func NewBroker(addr string, logger shared.Logger, cacheService shared.CacheServi
 	return &Broker{
 		TCPServer: network.TCPServer{
 			Addr:         addr,
-			Name:         "login-server-broker",
+			Name:         "login-broker",
 			NewSession:   newBrokerSession,
 			UidGenerator: shared.NewUidGenerator(0),
 			Logger:       logger,
+			Sessions:     shared.NewSafeMap[uint32, network.TCPServerSession](),
 		},
 		cacheService: cacheService,
 	}
