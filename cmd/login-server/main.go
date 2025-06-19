@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/signal"
@@ -24,8 +25,9 @@ func main() {
 	}
 
 	cache := shared.NewRedisCacheService(cfg.CacheServerAddr, cfg.CacheServerPassword, cfg.CacheTlsEnabled)
+	_, err = cache.Ping(context.Background()).Result()
 	if err != nil {
-		logger.Error("Failed to create cache service", shared.Field{Key: "error", Value: err})
+		logger.Error("Failed to ping cache service", shared.Field{Key: "error", Value: err})
 		os.Exit(1)
 	}
 
