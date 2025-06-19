@@ -30,7 +30,7 @@ type brokerSession struct {
 
 func newBrokerSession(id uint32, conn net.Conn, server interface{}) network.TCPServerSession {
 	if tcpConn, ok := conn.(*net.TCPConn); ok {
-		tcpConn.SetNoDelay(true)
+		_ = tcpConn.SetNoDelay(true)
 	}
 
 	session := &brokerSession{

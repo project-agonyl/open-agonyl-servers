@@ -28,7 +28,7 @@ type loginServerSession struct {
 
 func newLoginServerSession(id uint32, conn net.Conn, server interface{}) network.TCPServerSession {
 	if tcpConn, ok := conn.(*net.TCPConn); ok {
-		tcpConn.SetNoDelay(true)
+		_ = tcpConn.SetNoDelay(true)
 	}
 
 	session := &loginServerSession{
@@ -152,7 +152,7 @@ func (s *loginServerSession) sendClientMsg(msg string) error {
 func (s *loginServerSession) handleLogin(packet []byte) {
 	msg, err := messages.ReadMsgC2SLogin(packet)
 	if err != nil {
-		s.sendClientMsg(constants.InvalidCredentialsMsg)
+		_ = s.sendClientMsg(constants.InvalidCredentialsMsg)
 		s.server.Logger.Error("Could not read login message",
 			shared.Field{Key: "error", Value: err})
 		return
