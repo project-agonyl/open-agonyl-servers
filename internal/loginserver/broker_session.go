@@ -28,7 +28,7 @@ type brokerSession struct {
 	wg            sync.WaitGroup
 }
 
-func newBrokerSession(id uint32, conn net.Conn, server interface{}) network.TCPServerSession {
+func newBrokerSession(id uint32, conn net.Conn) network.TCPServerSession {
 	if tcpConn, ok := conn.(*net.TCPConn); ok {
 		_ = tcpConn.SetNoDelay(true)
 	}
@@ -36,7 +36,6 @@ func newBrokerSession(id uint32, conn net.Conn, server interface{}) network.TCPS
 	session := &brokerSession{
 		id:       id,
 		conn:     conn,
-		server:   server.(*Broker),
 		sendChan: make(chan []byte, 100),
 		done:     make(chan struct{}),
 	}

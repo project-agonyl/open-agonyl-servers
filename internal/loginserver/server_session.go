@@ -28,7 +28,7 @@ type loginServerSession struct {
 	wg       sync.WaitGroup
 }
 
-func newLoginServerSession(id uint32, conn net.Conn, server interface{}) network.TCPServerSession {
+func newLoginServerSession(id uint32, conn net.Conn) network.TCPServerSession {
 	if tcpConn, ok := conn.(*net.TCPConn); ok {
 		_ = tcpConn.SetNoDelay(true)
 	}
@@ -36,7 +36,6 @@ func newLoginServerSession(id uint32, conn net.Conn, server interface{}) network
 	session := &loginServerSession{
 		id:       id,
 		conn:     conn,
-		server:   server.(*Server),
 		sendChan: make(chan []byte, 100),
 		done:     make(chan struct{}),
 	}

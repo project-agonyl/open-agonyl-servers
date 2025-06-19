@@ -8,7 +8,7 @@ import (
 	"github.com/project-agonyl/open-agonyl-servers/internal/shared"
 )
 
-type NewSessionFunc func(id uint32, conn net.Conn, server interface{}) TCPServerSession
+type NewSessionFunc func(id uint32, conn net.Conn) TCPServerSession
 
 type TCPServer struct {
 	Logger       shared.Logger
@@ -90,7 +90,7 @@ func (s *TCPServer) AcceptLoop() {
 		}
 
 		id := s.UidGenerator.Uid()
-		session := s.NewSession(id, conn, s)
+		session := s.NewSession(id, conn)
 		s.AddSession(id, session)
 		go session.Handle()
 	}

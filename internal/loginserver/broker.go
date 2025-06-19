@@ -2,6 +2,7 @@ package loginserver
 
 import (
 	"errors"
+	"net"
 	"slices"
 
 	"github.com/project-agonyl/open-agonyl-servers/internal/shared"
@@ -15,17 +16,26 @@ type Broker struct {
 }
 
 func NewBroker(addr string, logger shared.Logger, cacheService shared.CacheService) *Broker {
-	return &Broker{
+	broker := &Broker{
 		TCPServer: network.TCPServer{
 			Addr:         addr,
 			Name:         "login-broker",
-			NewSession:   newBrokerSession,
 			UidGenerator: shared.NewUidGenerator(0),
 			Logger:       logger,
 			Sessions:     shared.NewSafeMap[uint32, network.TCPServerSession](),
 		},
 		cacheService: cacheService,
 	}
+	broker.NewSession = func(id uint32, conn net.Conn) network.TCPServerSession {
+		session := newBrokerSession(id, conn)
+		if brokerSession, ok := session.(*brokerSession); ok {
+			brokerSession.server = broker
+		}
+
+		return session
+	}
+
+	return broker
 }
 
 func (s *Broker) GetGateServerList() map[byte]string {
