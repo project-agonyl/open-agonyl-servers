@@ -1,4 +1,4 @@
-CREATE TYPE account_status AS ENUM ('active', 'inactive', 'banned', 'suspended', 'pending_verification');
+CREATE TYPE account_status AS ENUM ('active', 'inactive', 'banned', 'suspended', 'pending_verification', 'deleted');
 
 CREATE TABLE accounts (
     id SERIAL PRIMARY KEY,
@@ -15,6 +15,7 @@ CREATE TABLE accounts (
     last_failed_login TIMESTAMP WITH TIME ZONE,
     locked_until TIMESTAMP WITH TIME ZONE,
     
+    is_online BOOLEAN DEFAULT false,
     last_login TIMESTAMP WITH TIME ZONE,
     last_logout TIMESTAMP WITH TIME ZONE,
     

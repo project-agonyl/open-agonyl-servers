@@ -14,7 +14,7 @@ export GOOS=windows
 
 # Build for Windows
 echo "Building $binary_name for Windows..."
-go build -ldflags="-w -s" -o "bin/${binary_name}.exe" "cmd/${binary_name}/main.go"
+go build -ldflags="-w -s" -o "bin/${binary_name}/${binary_name}.exe" "cmd/${binary_name}/main.go"
 
 # Reset Go environment variables to their defaults
 export GOARCH=
@@ -22,6 +22,6 @@ export GOOS=
 
 # Build for Linux
 echo "Building $binary_name for Linux..."
-go build -ldflags="-w -s" -o "bin/${binary_name}" "cmd/${binary_name}/main.go"
+go build -ldflags="-w -s" -o "bin/${binary_name}/${binary_name}" "cmd/${binary_name}/main.go"
 
 echo "$binary_name build complete!"

@@ -1,6 +1,7 @@
 package loginserver
 
 import (
+	"github.com/project-agonyl/open-agonyl-servers/internal/loginserver/config"
 	"github.com/project-agonyl/open-agonyl-servers/internal/loginserver/db"
 	"github.com/project-agonyl/open-agonyl-servers/internal/shared"
 	"github.com/project-agonyl/open-agonyl-servers/internal/shared/helpers"
@@ -12,9 +13,17 @@ type Server struct {
 	dbService    db.DBService
 	cacheService shared.CacheService
 	broker       *Broker
+	cfg          *config.EnvVars
 }
 
-func NewServer(addr string, logger shared.Logger, cacheService shared.CacheService, dbService db.DBService, broker *Broker) *Server {
+func NewServer(
+	addr string,
+	logger shared.Logger,
+	cacheService shared.CacheService,
+	dbService db.DBService,
+	broker *Broker,
+	cfg *config.EnvVars,
+) *Server {
 	return &Server{
 		TCPServer: network.TCPServer{
 			Addr:         addr,
@@ -26,6 +35,7 @@ func NewServer(addr string, logger shared.Logger, cacheService shared.CacheServi
 		cacheService: cacheService,
 		dbService:    dbService,
 		broker:       broker,
+		cfg:          cfg,
 	}
 }
 

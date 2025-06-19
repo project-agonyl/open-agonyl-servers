@@ -10,7 +10,7 @@ set GOOS=linux
 
 REM Build for Linux
 echo Building %SERVER_NAME% for Linux...
-go build -ldflags="-w -s" -o bin\%SERVER_NAME% cmd\%SERVER_NAME%\main.go
+go build -ldflags="-w -s" -o bin\%SERVER_NAME%\%SERVER_NAME% cmd\%SERVER_NAME%\main.go
 
 REM Reset Go environment variables to their defaults
 set GOARCH=
@@ -18,6 +18,6 @@ set GOOS=
 
 REM Build for Windows
 echo Building %SERVER_NAME% for Windows...
-go build -ldflags="-w -s" -o bin\%SERVER_NAME%.exe cmd\%SERVER_NAME%\main.go
+go build -ldflags="-w -s" -o bin\%SERVER_NAME%\%SERVER_NAME%.exe cmd\%SERVER_NAME%\main.go
 
 echo %SERVER_NAME% build complete!

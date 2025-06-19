@@ -1,6 +1,7 @@
 package loginserver
 
 import (
+	"errors"
 	"slices"
 
 	"github.com/project-agonyl/open-agonyl-servers/internal/shared"
@@ -56,4 +57,42 @@ func (s *Broker) RemoveLoggedInUser(username string) {
 
 func (s *Broker) IsLoggedIn(username string) bool {
 	return helpers.IsLoggedIn(s.cacheService, username)
+}
+
+func (s *Broker) GetGateServerInfoByServerId(serverId byte) (*GateInfo, error) {
+	gateInfo := GateInfo{}
+	found := false
+	s.Sessions.Range(func(key uint32, value network.TCPServerSession) bool {
+		brokerSession := value.(*brokerSession)
+		if brokerSession.serverId == serverId {
+			gateInfo.Id = brokerSession.id
+			gateInfo.IpAddress = brokerSession.ipAddress
+			gateInfo.Port = brokerSession.port
+			found = true
+			return false
+		}
+
+		return true
+	})
+
+	if !found {
+		return nil, errors.New("gate server not found")
+	}
+
+	return &gateInfo, nil
+}
+
+func (s *Broker) SendMsgToGateServer(id uint32, msg []byte) error {
+	session, ok := s.Sessions.Get(id)
+	if !ok {
+		return errors.New("gate server not found")
+	}
+
+	return session.Send(msg)
+}
+
+type GateInfo struct {
+	Id        uint32
+	IpAddress string
+	Port      uint32
 }

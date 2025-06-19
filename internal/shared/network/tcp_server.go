@@ -36,7 +36,7 @@ func (s *TCPServer) Start() error {
 	s.Listener = ln
 	s.Running.Store(true)
 
-	s.Logger.Info("server started", shared.Field{Key: "addr", Value: s.Addr})
+	s.Logger.Info(fmt.Sprintf("%s server started", s.Name), shared.Field{Key: "addr", Value: s.Addr})
 	go s.AcceptLoop()
 
 	return nil
@@ -44,7 +44,7 @@ func (s *TCPServer) Start() error {
 
 func (s *TCPServer) Stop() {
 	if !s.Running.Load() {
-		s.Logger.Info("server not running")
+		s.Logger.Info(fmt.Sprintf("%s server not running", s.Name))
 		return
 	}
 
@@ -62,7 +62,7 @@ func (s *TCPServer) Stop() {
 		return false
 	})
 
-	s.Logger.Info("server stopped")
+	s.Logger.Info(fmt.Sprintf("%s server stopped", s.Name))
 }
 
 func (s *TCPServer) AddSession(id uint32, session TCPServerSession) {
@@ -85,7 +85,7 @@ func (s *TCPServer) AcceptLoop() {
 				return
 			}
 
-			s.Logger.Error("accept error", shared.Field{Key: "error", Value: err})
+			s.Logger.Error(fmt.Sprintf("%s server accept error", s.Name), shared.Field{Key: "error", Value: err})
 			continue
 		}
 

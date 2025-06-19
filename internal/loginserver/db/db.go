@@ -9,6 +9,7 @@ import (
 
 type DBService interface {
 	GetAccountByUsername(username string) (*Account, error)
+	Close() error
 }
 
 type dbService struct {
@@ -28,9 +29,13 @@ func NewDbService(dbUrl string, logger shared.Logger) (DBService, error) {
 	}, nil
 }
 
+func (s *dbService) Close() error {
+	return s.db.Close()
+}
+
 func (s *dbService) GetAccountByUsername(username string) (*Account, error) {
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
-	qb := psql.Select("id", "username", "password_hash", "account_status").
+	qb := psql.Select("id", "username", "password_hash", "account_status", "is_online").
 		From("accounts").
 		Where(sq.Eq{"username": username})
 
@@ -55,4 +60,5 @@ type Account struct {
 	Username      string `db:"username"`
 	PasswordHash  string `db:"password_hash"`
 	AccountStatus string `db:"account_status"`
+	IsOnline      bool   `db:"is_online"`
 }

@@ -9,3 +9,8 @@ const AccountNotActiveMsg = "Account is not active!"
 const AccountBannedMsg = "Account is banned!"
 
 const InvalidCredentialsMsg = "Invalid credentials!"
+
+const (
+	AccountStatusActive = "active"
+	AccountStatusBanned = "banned"
+)

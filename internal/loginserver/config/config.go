@@ -18,6 +18,8 @@ type EnvVars struct {
 	CacheServerPassword string
 	CacheTlsEnabled     bool
 	CacheKeyPrefix      string
+	IsTestMode          bool
+	BrokerPort          string
 }
 
 func New() *EnvVars {
@@ -82,6 +84,25 @@ func New() *EnvVars {
 		}
 	}
 
+	if _, ok := os.LookupEnv("IS_TEST_MODE"); !ok {
+		err := os.Setenv("IS_TEST_MODE", "false")
+		if err != nil {
+			slog.Info("Could not set default IS_TEST_MODE!")
+		}
+	}
+
+	isTestMode, err := strconv.ParseBool(os.Getenv("IS_TEST_MODE"))
+	if err != nil {
+		isTestMode = false
+	}
+
+	if _, ok := os.LookupEnv("BROKER_PORT"); !ok {
+		err := os.Setenv("BROKER_PORT", "3210")
+		if err != nil {
+			slog.Info("Could not set default BROKER_PORT!")
+		}
+	}
+
 	return &EnvVars{
 		Port:                os.Getenv("PORT"),
 		Environment:         os.Getenv("ENVIRONMENT"),
@@ -90,6 +111,9 @@ func New() *EnvVars {
 		CacheServerAddr:     os.Getenv("CACHE_SERVER_ADDR"),
 		CacheServerPassword: os.Getenv("CACHE_SERVER_PASSWORD"),
 		CacheTlsEnabled:     cacheTlsEnabled,
+		CacheKeyPrefix:      os.Getenv("CACHE_KEY_PREFIX"),
+		IsTestMode:          isTestMode,
+		BrokerPort:          os.Getenv("BROKER_PORT"),
 	}
 }
 
