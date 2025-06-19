@@ -1,39 +1,42 @@
 package loginserver
 
 import (
-	"os"
-
+	"github.com/project-agonyl/open-agonyl-servers/internal/loginserver/db"
 	"github.com/project-agonyl/open-agonyl-servers/internal/shared"
+	"github.com/project-agonyl/open-agonyl-servers/internal/shared/helpers"
 	"github.com/project-agonyl/open-agonyl-servers/internal/shared/network"
-	"github.com/rs/zerolog"
 )
 
-type LoginServer struct {
+type Server struct {
 	network.TCPServer
-	loggedInAccounts *shared.SafeSet[string]
+	dbService    db.DBService
+	cacheService shared.CacheService
+	broker       *Broker
 }
 
-func NewLoginServer(addr string) *LoginServer {
-	return &LoginServer{
+func NewServer(addr string, logger shared.Logger, cacheService shared.CacheService, dbService db.DBService, broker *Broker) *Server {
+	return &Server{
 		TCPServer: network.TCPServer{
 			Addr:         addr,
 			Name:         "login-server",
 			NewSession:   newLoginServerSession,
 			UidGenerator: shared.NewUidGenerator(0),
-			Logger:       shared.NewZerologLogger(zerolog.New(os.Stdout), "login-server", zerolog.InfoLevel),
+			Logger:       logger,
 		},
-		loggedInAccounts: shared.NewSafeSet[string](),
+		cacheService: cacheService,
+		dbService:    dbService,
+		broker:       broker,
 	}
 }
 
-func (s *LoginServer) AddLoggedInAccount(account string) {
-	s.loggedInAccounts.Add(account)
+func (s *Server) AddLoggedInUser(username string, id uint32) {
+	helpers.AddLoggedInUser(s.cacheService, username, id)
 }
 
-func (s *LoginServer) RemoveLoggedInAccount(account string) {
-	s.loggedInAccounts.Remove(account)
+func (s *Server) RemoveLoggedInUser(username string) {
+	helpers.RemoveLoggedInUser(s.cacheService, username)
 }
 
-func (s *LoginServer) IsLoggedIn(account string) bool {
-	return s.loggedInAccounts.Contains(account)
+func (s *Server) IsLoggedIn(username string) bool {
+	return helpers.IsLoggedIn(s.cacheService, username)
 }

@@ -1,0 +1,58 @@
+package db
+
+import (
+	sq "github.com/Masterminds/squirrel"
+	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
+	"github.com/project-agonyl/open-agonyl-servers/internal/shared"
+)
+
+type DBService interface {
+	GetAccountByUsername(username string) (*Account, error)
+}
+
+type dbService struct {
+	db     *sqlx.DB
+	logger shared.Logger
+}
+
+func NewDbService(dbUrl string, logger shared.Logger) (DBService, error) {
+	db, err := sqlx.Connect("postgres", dbUrl)
+	if err != nil {
+		return nil, err
+	}
+
+	return &dbService{
+		db:     db,
+		logger: logger,
+	}, nil
+}
+
+func (s *dbService) GetAccountByUsername(username string) (*Account, error) {
+	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+	qb := psql.Select("id", "username", "password_hash", "account_status").
+		From("accounts").
+		Where(sq.Eq{"username": username})
+
+	query, args, err := qb.ToSql()
+	if err != nil {
+		s.logger.Error("Failed to build query", shared.Field{Key: "error", Value: err})
+		return nil, err
+	}
+
+	account := &Account{}
+	err = s.db.Get(account, query, args...)
+	if err != nil {
+		s.logger.Error("Failed to execute query", shared.Field{Key: "error", Value: err})
+		return nil, err
+	}
+
+	return account, nil
+}
+
+type Account struct {
+	ID            uint32 `db:"id"`
+	Username      string `db:"username"`
+	PasswordHash  string `db:"password_hash"`
+	AccountStatus string `db:"account_status"`
+}
