@@ -10,10 +10,8 @@ DROP INDEX IF EXISTS idx_accounts_username;
 DROP INDEX IF EXISTS idx_accounts_email;
 DROP INDEX IF EXISTS idx_accounts_account_id;
 DROP INDEX IF EXISTS idx_accounts_status;
-DROP INDEX IF EXISTS idx_accounts_subscription_tier;
 DROP INDEX IF EXISTS idx_accounts_created_at;
 DROP INDEX IF EXISTS idx_accounts_last_login;
-DROP INDEX IF EXISTS idx_accounts_guild_id;
 
 DROP INDEX IF EXISTS idx_profiles_account_id;
 DROP INDEX IF EXISTS idx_profiles_display_name;

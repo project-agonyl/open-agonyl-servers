@@ -1,7 +1,7 @@
 CREATE TYPE account_status AS ENUM ('active', 'inactive', 'banned', 'suspended', 'pending_verification');
 
 CREATE TABLE accounts (
-    id BIGSERIAL PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     account_id UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
     
     username VARCHAR(50) UNIQUE NOT NULL,
@@ -43,8 +43,8 @@ CREATE TABLE accounts (
 );
 
 CREATE TABLE profiles (
-    id BIGSERIAL PRIMARY KEY,
-    account_id BIGINT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    id SERIAL PRIMARY KEY,
+    account_id INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
     
     display_name VARCHAR(100),
     first_name VARCHAR(50),
@@ -76,10 +76,8 @@ CREATE INDEX idx_accounts_username ON accounts(username);
 CREATE INDEX idx_accounts_email ON accounts(email);
 CREATE INDEX idx_accounts_account_id ON accounts(account_id);
 CREATE INDEX idx_accounts_status ON accounts(status);
-CREATE INDEX idx_accounts_subscription_tier ON accounts(subscription_tier);
 CREATE INDEX idx_accounts_created_at ON accounts(created_at);
 CREATE INDEX idx_accounts_last_login ON accounts(last_login);
-CREATE INDEX idx_accounts_guild_id ON accounts(guild_id) WHERE guild_id IS NOT NULL;
 
 CREATE INDEX idx_profiles_account_id ON profiles(account_id);
 CREATE INDEX idx_profiles_display_name ON profiles(display_name);
