@@ -174,7 +174,9 @@ func (s *loginServerSession) handleLogin(packet []byte) {
 	if err != nil {
 		_ = s.sendClientMsg(constants.InvalidCredentialsMsg)
 		s.server.Logger.Error("Could not get account by username",
-			shared.Field{Key: "error", Value: err})
+			shared.Field{Key: "error", Value: err},
+			shared.Field{Key: "username", Value: username},
+		)
 		return
 	}
 
@@ -185,12 +187,12 @@ func (s *loginServerSession) handleLogin(packet []byte) {
 			return
 		}
 
-		if strings.EqualFold(account.AccountStatus, constants.AccountStatusBanned) {
+		if strings.EqualFold(account.Status, constants.AccountStatusBanned) {
 			_ = s.sendClientMsg(constants.AccountBannedMsg)
 			return
 		}
 
-		if !strings.EqualFold(account.AccountStatus, constants.AccountStatusActive) {
+		if !strings.EqualFold(account.Status, constants.AccountStatusActive) {
 			_ = s.sendClientMsg(constants.AccountNotActiveMsg)
 			return
 		}

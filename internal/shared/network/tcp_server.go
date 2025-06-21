@@ -56,10 +56,9 @@ func (s *TCPServer) Stop() {
 	s.Sessions.Range(func(key uint32, session TCPServerSession) bool {
 		if closer, ok := any(session).(interface{ Close() error }); ok {
 			_ = closer.Close()
-			return true
 		}
 
-		return false
+		return true
 	})
 
 	s.Logger.Info(fmt.Sprintf("%s server stopped", s.Name))

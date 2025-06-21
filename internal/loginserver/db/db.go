@@ -35,7 +35,7 @@ func (s *dbService) Close() error {
 
 func (s *dbService) GetAccountByUsername(username string) (*Account, error) {
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
-	qb := psql.Select("id", "username", "password_hash", "account_status", "is_online").
+	qb := psql.Select("id", "username", "password_hash", "status", "is_online").
 		From("accounts").
 		Where(sq.Eq{"username": username})
 
@@ -56,9 +56,9 @@ func (s *dbService) GetAccountByUsername(username string) (*Account, error) {
 }
 
 type Account struct {
-	ID            uint32 `db:"id"`
-	Username      string `db:"username"`
-	PasswordHash  string `db:"password_hash"`
-	AccountStatus string `db:"account_status"`
-	IsOnline      bool   `db:"is_online"`
+	ID           uint32 `db:"id"`
+	Username     string `db:"username"`
+	PasswordHash string `db:"password_hash"`
+	Status       string `db:"status"`
+	IsOnline     bool   `db:"is_online"`
 }

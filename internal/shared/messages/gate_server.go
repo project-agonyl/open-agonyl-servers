@@ -129,3 +129,120 @@ func ReadMsgGate2LsPreparedAccLogin(packet []byte) (*MsgGate2LsPreparedAccLogin,
 
 	return &msg, nil
 }
+
+type MsgGate2ZsConnect struct {
+	MsgHeadNoProtocol
+	AgentID byte
+}
+
+func (msg *MsgGate2ZsConnect) GetSize() uint32 {
+	return uint32(binary.Size(msg))
+}
+
+func (msg *MsgGate2ZsConnect) SetSize() {
+	msg.Size = msg.GetSize()
+}
+
+func (msg *MsgGate2ZsConnect) GetBytes() []byte {
+	var buffer bytes.Buffer
+	_ = binary.Write(&buffer, binary.LittleEndian, msg)
+	return buffer.Bytes()
+}
+
+func NewMsgGate2ZsConnect(agentID byte) *MsgGate2ZsConnect {
+	msg := MsgGate2ZsConnect{
+		MsgHeadNoProtocol: MsgHeadNoProtocol{Ctrl: 0x01, Cmd: 0xE0},
+		AgentID:           agentID,
+	}
+	msg.SetSize()
+	return &msg
+}
+
+func ReadMsgGate2ZsConnect(packet []byte) (*MsgGate2ZsConnect, error) {
+	var msg MsgGate2ZsConnect
+	if err := binary.Read(bytes.NewReader(packet), binary.LittleEndian, &msg); err != nil {
+		return nil, err
+	}
+
+	return &msg, nil
+}
+
+type MsgGate2AsNewClient struct {
+	MsgHeadNoProtocol
+	Account  [21]byte
+	Password [21]byte
+	ClientIP [16]byte
+	Unknown  [78]byte
+}
+
+func (msg *MsgGate2AsNewClient) GetSize() uint32 {
+	return uint32(binary.Size(msg))
+}
+
+func (msg *MsgGate2AsNewClient) SetSize() {
+	msg.Size = msg.GetSize()
+}
+
+func (msg *MsgGate2AsNewClient) GetBytes() []byte {
+	var buffer bytes.Buffer
+	_ = binary.Write(&buffer, binary.LittleEndian, msg)
+	return buffer.Bytes()
+}
+
+func NewMsgGate2AsNewClient(account string, password string, clientIP string, pcId uint32) *MsgGate2AsNewClient {
+	msg := MsgGate2AsNewClient{
+		MsgHeadNoProtocol: MsgHeadNoProtocol{Ctrl: 0x01, Cmd: 0xE1, PcId: pcId},
+	}
+
+	copy(msg.Account[:], utils.MakeFixedLengthStringBytes(account, 21))
+	copy(msg.Password[:], utils.MakeFixedLengthStringBytes(password, 21))
+	copy(msg.ClientIP[:], utils.MakeFixedLengthStringBytes(clientIP, 16))
+	msg.SetSize()
+	return &msg
+}
+
+func ReadMsgGate2AsNewClient(packet []byte) (*MsgGate2AsNewClient, error) {
+	var msg MsgGate2AsNewClient
+	if err := binary.Read(bytes.NewReader(packet), binary.LittleEndian, &msg); err != nil {
+		return nil, err
+	}
+
+	return &msg, nil
+}
+
+type MsgZa2ZsAccLogout struct {
+	MsgHeadNoProtocol
+	Reason byte
+}
+
+func (msg *MsgZa2ZsAccLogout) GetSize() uint32 {
+	return uint32(binary.Size(msg))
+}
+
+func (msg *MsgZa2ZsAccLogout) SetSize() {
+	msg.Size = msg.GetSize()
+}
+
+func (msg *MsgZa2ZsAccLogout) GetBytes() []byte {
+	var buffer bytes.Buffer
+	_ = binary.Write(&buffer, binary.LittleEndian, msg)
+	return buffer.Bytes()
+}
+
+func NewMsgZa2ZsAccLogout(pcId uint32, reason byte) *MsgZa2ZsAccLogout {
+	msg := MsgZa2ZsAccLogout{
+		MsgHeadNoProtocol: MsgHeadNoProtocol{Ctrl: 0x01, Cmd: 0xE2, PcId: pcId},
+		Reason:            reason,
+	}
+	msg.SetSize()
+	return &msg
+}
+
+func ReadMsgZa2ZsAccLogout(packet []byte) (*MsgZa2ZsAccLogout, error) {
+	var msg MsgZa2ZsAccLogout
+	if err := binary.Read(bytes.NewReader(packet), binary.LittleEndian, &msg); err != nil {
+		return nil, err
+	}
+
+	return &msg, nil
+}

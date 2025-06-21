@@ -34,10 +34,11 @@ func newBrokerSession(id uint32, conn net.Conn) network.TCPServerSession {
 	}
 
 	session := &brokerSession{
-		id:       id,
-		conn:     conn,
-		sendChan: make(chan []byte, 100),
-		done:     make(chan struct{}),
+		id:         id,
+		conn:       conn,
+		sendChan:   make(chan []byte, 100),
+		done:       make(chan struct{}),
+		serverName: "Agonyl",
 	}
 
 	session.wg.Add(1)
@@ -52,6 +53,12 @@ func (s *brokerSession) ID() uint32 {
 
 func (s *brokerSession) Handle() {
 	defer func() {
+		s.server.Logger.Info(fmt.Sprintf("Gate server %d closed", s.id),
+			shared.Field{Key: "serverName", Value: s.serverName},
+			shared.Field{Key: "ipAddress", Value: s.ipAddress},
+			shared.Field{Key: "port", Value: s.port},
+			shared.Field{Key: "serverId", Value: s.serverId},
+		)
 		s.server.RemoveSession(s.id)
 		close(s.done)
 		s.wg.Wait()
@@ -142,7 +149,7 @@ func (s *brokerSession) handleGateConnect(packet []byte) {
 		shared.Field{Key: "ipAddress", Value: s.ipAddress},
 		shared.Field{Key: "port", Value: s.port},
 		shared.Field{Key: "serverName", Value: s.serverName},
-		shared.Field{Key: "id", Value: s.id},
+		shared.Field{Key: "serverId", Value: s.serverId},
 	)
 }
 

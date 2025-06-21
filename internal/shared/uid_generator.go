@@ -8,10 +8,6 @@ type UidGenerator struct {
 }
 
 func NewUidGenerator(startValue uint32) *UidGenerator {
-	if startValue == 0 {
-		startValue = 2047
-	}
-
 	gen := &UidGenerator{
 		start: startValue,
 	}

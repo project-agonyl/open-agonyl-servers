@@ -45,3 +45,45 @@ func ReadMsgC2SLogin(packet []byte) (*MsgC2SLogin, error) {
 
 	return &msg, nil
 }
+
+type MsgC2SGateLogin struct {
+	MsgHeadNoProtocol
+	PcId     uint32
+	Account  [0x15]byte
+	Password [0x15]byte
+}
+
+func (msg *MsgC2SGateLogin) GetSize() uint32 {
+	return uint32(binary.Size(msg))
+}
+
+func (msg *MsgC2SGateLogin) SetSize() {
+	msg.Size = msg.GetSize()
+}
+
+func (msg *MsgC2SGateLogin) GetBytes() []byte {
+	var buffer bytes.Buffer
+	_ = binary.Write(&buffer, binary.LittleEndian, msg)
+	return buffer.Bytes()
+}
+
+func NewMsgC2SGateLogin(pcId uint32, account string, password string) *MsgC2SGateLogin {
+	msg := MsgC2SGateLogin{
+		MsgHeadNoProtocol: MsgHeadNoProtocol{Ctrl: 0x01, Cmd: 0xE2, PcId: pcId},
+		PcId:              pcId,
+	}
+
+	copy(msg.Account[:], utils.MakeFixedLengthStringBytes(account, 0x15))
+	copy(msg.Password[:], utils.MakeFixedLengthStringBytes(password, 0x15))
+	msg.SetSize()
+	return &msg
+}
+
+func ReadMsgC2SGateLogin(packet []byte) (*MsgC2SGateLogin, error) {
+	var msg MsgC2SGateLogin
+	if err := binary.Read(bytes.NewReader(packet), binary.LittleEndian, &msg); err != nil {
+		return nil, err
+	}
+
+	return &msg, nil
+}
