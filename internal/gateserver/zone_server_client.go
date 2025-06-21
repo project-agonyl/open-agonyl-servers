@@ -183,7 +183,7 @@ func (c *ZoneServerClient) processPacket(packet []byte) {
 			c.crypto.Encrypt(p)
 		}
 
-		player.Send(p)
+		_ = player.Send(p)
 	}(packet)
 }
 
