@@ -53,7 +53,7 @@ func (s *brokerSession) ID() uint32 {
 
 func (s *brokerSession) Handle() {
 	defer func() {
-		s.server.Logger.Info(fmt.Sprintf("Gate server %d closed", s.id),
+		s.server.Logger.Info(fmt.Sprintf("Gate server %d closed", s.serverId),
 			shared.Field{Key: "serverName", Value: s.serverName},
 			shared.Field{Key: "ipAddress", Value: s.ipAddress},
 			shared.Field{Key: "port", Value: s.port},
@@ -161,7 +161,7 @@ func (s *brokerSession) handleAccountLogout(packet []byte) {
 	}
 
 	account := utils.ReadStringFromBytes(msg.Account[:])
-	s.server.Logger.Info(fmt.Sprintf("%s logged out", account))
+	s.server.Logger.Info(fmt.Sprintf("Account %s logged out", account))
 	s.server.RemoveLoggedInUser(account)
 }
 
@@ -173,7 +173,7 @@ func (s *brokerSession) handleAccountLogin(packet []byte) {
 	}
 
 	account := utils.ReadStringFromBytes(msg.Account[:])
-	s.server.Logger.Info(fmt.Sprintf("%s logged in", account))
+	s.server.Logger.Info(fmt.Sprintf("Account %s has selected a server", account))
 	s.server.AddLoggedInUser(account, msg.PcId)
 }
 

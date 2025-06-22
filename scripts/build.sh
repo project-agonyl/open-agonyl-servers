@@ -6,6 +6,8 @@ binary_name="login-server"
 # Check if a binary name is provided as an argument
 if [ $# -eq 1 ]; then
     binary_name=$1
+    # Strip quotes from the binary name
+    binary_name=$(echo "$binary_name" | tr -d '"')
 fi
 
 # Set the Go environment variables for building for Windows

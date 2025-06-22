@@ -17,7 +17,11 @@ import (
 func main() {
 	cfg := config.New()
 	logger := shared.NewZerologLogger(zerolog.New(os.Stdout), "login-server", cfg.GetZerologLevel())
-	logger.Info("Starting Login Server service...")
+	logger.Info(
+		"Starting Login Server service...",
+		shared.Field{Key: "autoCreateAccount", Value: cfg.AutoCreateAccount},
+		shared.Field{Key: "isTestMode", Value: cfg.IsTestMode},
+	)
 	db, err := db.NewDbService(cfg.DatabaseURL, logger)
 	if err != nil {
 		logger.Error("Failed to create db service", shared.Field{Key: "error", Value: err})

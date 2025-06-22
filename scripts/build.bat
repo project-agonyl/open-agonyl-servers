@@ -1,7 +1,8 @@
 @echo off
 
-REM Set the input name for the server
+REM Set the input name for the server and strip quotes
 set SERVER_NAME=%1
+set SERVER_NAME=%SERVER_NAME:"=%
 if "%SERVER_NAME%"=="" set SERVER_NAME=login-server
 
 REM Set the Go environment variables for building for Linux (64-bit)

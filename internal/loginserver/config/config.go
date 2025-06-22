@@ -20,6 +20,7 @@ type EnvVars struct {
 	CacheKeyPrefix      string
 	IsTestMode          bool
 	BrokerPort          string
+	AutoCreateAccount   bool
 }
 
 func New() *EnvVars {
@@ -103,6 +104,18 @@ func New() *EnvVars {
 		}
 	}
 
+	if _, ok := os.LookupEnv("AUTO_CREATE_ACCOUNT"); !ok {
+		err := os.Setenv("AUTO_CREATE_ACCOUNT", "false")
+		if err != nil {
+			slog.Info("Could not set default AUTO_CREATE_ACCOUNT!")
+		}
+	}
+
+	autoCreateAccount, err := strconv.ParseBool(os.Getenv("AUTO_CREATE_ACCOUNT"))
+	if err != nil {
+		autoCreateAccount = false
+	}
+
 	return &EnvVars{
 		Port:                os.Getenv("PORT"),
 		Environment:         os.Getenv("ENVIRONMENT"),
@@ -114,6 +127,7 @@ func New() *EnvVars {
 		CacheKeyPrefix:      os.Getenv("CACHE_KEY_PREFIX"),
 		IsTestMode:          isTestMode,
 		BrokerPort:          os.Getenv("BROKER_PORT"),
+		AutoCreateAccount:   autoCreateAccount,
 	}
 }
 

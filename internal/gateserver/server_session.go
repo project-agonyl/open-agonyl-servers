@@ -237,7 +237,7 @@ func (s *serverSession) handleLogin(packet []byte) {
 		_ = session.server.loginServerClient.Send(messages.NewMsgGate2LsPreparedAccLogin(username).GetBytes())
 	}(s)
 	s.server.Logger.Info(
-		fmt.Sprintf("Account %s logged in", username),
+		fmt.Sprintf("Account %s session started", username),
 		shared.Field{Key: "id", Value: id},
 		shared.Field{Key: "username", Value: username},
 	)

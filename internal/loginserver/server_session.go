@@ -2,7 +2,9 @@ package loginserver
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -155,6 +157,7 @@ func (s *loginServerSession) handleLogin(packet []byte) {
 		return
 	}
 
+	var err error
 	msg, err := messages.ReadMsgC2SLogin(packet)
 	if err != nil {
 		_ = s.sendClientMsg(constants.InvalidCredentialsMsg)
@@ -170,13 +173,22 @@ func (s *loginServerSession) handleLogin(packet []byte) {
 		return
 	}
 
-	account, err := s.server.dbService.GetAccountByUsername(username)
+	var account *db.Account
+	if s.server.cfg.AutoCreateAccount {
+		account, err = s.server.dbService.GetOrCreateAccount(username, password)
+	} else {
+		account, err = s.server.dbService.GetAccountByUsername(username)
+	}
+
 	if err != nil {
 		_ = s.sendClientMsg(constants.InvalidCredentialsMsg)
-		s.server.Logger.Error("Could not get account by username",
-			shared.Field{Key: "error", Value: err},
-			shared.Field{Key: "username", Value: username},
-		)
+		if !errors.Is(err, sql.ErrNoRows) {
+			s.server.Logger.Error("Could not get account by username",
+				shared.Field{Key: "error", Value: err},
+				shared.Field{Key: "username", Value: username},
+			)
+		}
+
 		return
 	}
 

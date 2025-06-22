@@ -56,7 +56,7 @@ func (c *ZoneServerClient) Start() {
 		fmt.Sprintf("Starting %s client", c.name),
 		shared.Field{Key: "addr", Value: c.addr},
 		shared.Field{Key: "name", Value: c.name},
-		shared.Field{Key: "clientId", Value: c.id},
+		shared.Field{Key: "serverId", Value: c.id},
 	)
 	for c.running.Load() {
 		if err := c.connect(); err != nil {
@@ -84,7 +84,7 @@ func (c *ZoneServerClient) Stop() {
 		fmt.Sprintf("Stopping %s client", c.name),
 		shared.Field{Key: "addr", Value: c.addr},
 		shared.Field{Key: "name", Value: c.name},
-		shared.Field{Key: "clientId", Value: c.id},
+		shared.Field{Key: "serverId", Value: c.id},
 	)
 }
 
@@ -117,7 +117,7 @@ func (c *ZoneServerClient) connect() error {
 		fmt.Sprintf("Connected to %s", c.name),
 		shared.Field{Key: "addr", Value: c.addr},
 		shared.Field{Key: "name", Value: c.name},
-		shared.Field{Key: "clientId", Value: c.id},
+		shared.Field{Key: "serverId", Value: c.id},
 	)
 
 	return nil
@@ -140,7 +140,7 @@ func (c *ZoneServerClient) handleConnection() {
 			fmt.Sprintf("Failed to send connect packet to %s", c.name),
 			shared.Field{Key: "addr", Value: c.addr},
 			shared.Field{Key: "name", Value: c.name},
-			shared.Field{Key: "clientId", Value: c.id},
+			shared.Field{Key: "serverId", Value: c.id},
 			shared.Field{Key: "error", Value: err},
 		)
 		return
@@ -198,7 +198,7 @@ func (c *ZoneServerClient) sender() {
 					shared.Field{Key: "addr", Value: c.addr},
 					shared.Field{Key: "name", Value: c.name},
 					shared.Field{Key: "error", Value: err},
-					shared.Field{Key: "clientId", Value: c.id})
+					shared.Field{Key: "serverId", Value: c.id})
 				return
 			}
 

@@ -7,7 +7,6 @@ CREATE TABLE accounts (
     username VARCHAR(50) UNIQUE NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
-    salt VARCHAR(64) NOT NULL,
     
     status account_status NOT NULL DEFAULT 'pending_verification',
     ban_reason TEXT,
