@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"embed"
 	"errors"
+	"flag"
 	"os"
 
 	"github.com/golang-migrate/migrate/v4"
@@ -19,6 +20,10 @@ import (
 var migrations embed.FS
 
 func main() {
+	var migrateDown bool
+	flag.BoolVar(&migrateDown, "down", false, "Migrate down instead of up")
+	flag.Parse()
+
 	cfg := config.New()
 	logger := shared.NewZerologLogger(
 		zerolog.New(os.Stdout), "migrate", cfg.GetZerologLevel())
@@ -59,19 +64,35 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = m.Up()
-	if err != nil {
-		if errors.Is(err, migrate.ErrNoChange) {
-			logger.Info("no migrations to run")
-			os.Exit(0)
+	if migrateDown {
+		err = m.Down()
+		if err != nil {
+			if errors.Is(err, migrate.ErrNoChange) {
+				logger.Info("no migrations to rollback")
+				os.Exit(0)
+			}
+
+			logger.Error("migrate down error", shared.Field{
+				Key:   "error",
+				Value: err,
+			})
+			os.Exit(1)
 		}
+		logger.Info("migration rollback completed successfully")
+	} else {
+		err = m.Up()
+		if err != nil {
+			if errors.Is(err, migrate.ErrNoChange) {
+				logger.Info("no migrations to run")
+				os.Exit(0)
+			}
 
-		logger.Error("migrate up error", shared.Field{
-			Key:   "error",
-			Value: err,
-		})
-		os.Exit(1)
+			logger.Error("migrate up error", shared.Field{
+				Key:   "error",
+				Value: err,
+			})
+			os.Exit(1)
+		}
+		logger.Info("migration completed successfully")
 	}
-
-	logger.Info("migration completed successfully")
 }
