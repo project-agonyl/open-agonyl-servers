@@ -131,6 +131,7 @@ func (s *serverSession) processPacket(packet []byte) {
 			return
 		}
 
+		s.server.crypto.Decrypt(packet)
 		switch protocol {
 		case 0x1106: // Character login
 			fallthrough
@@ -151,6 +152,7 @@ func (s *serverSession) processPacket(packet []byte) {
 			return
 		}
 
+		s.server.crypto.Decrypt(packet)
 		switch protocol {
 		case 0x2322: // Transfer Clan Mark
 			fallthrough
