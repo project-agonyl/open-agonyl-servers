@@ -34,6 +34,7 @@ CREATE TABLE accounts (
     notification_push BOOLEAN DEFAULT true,
     notification_in_game BOOLEAN DEFAULT true,
     
+    metadata JSONB,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     deleted_at TIMESTAMP WITH TIME ZONE,

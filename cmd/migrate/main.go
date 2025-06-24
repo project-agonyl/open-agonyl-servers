@@ -5,6 +5,7 @@ import (
 	"embed"
 	"errors"
 	"flag"
+	"fmt"
 	"os"
 
 	"github.com/golang-migrate/migrate/v4"
@@ -95,4 +96,6 @@ func main() {
 		}
 		logger.Info("migration completed successfully")
 	}
+
+	_, _ = fmt.Scanln()
 }
