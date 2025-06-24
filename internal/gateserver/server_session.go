@@ -186,7 +186,7 @@ func (s *serverSession) handleLogin(packet []byte) {
 		s.server.Logger.Error("Failed to read login message",
 			shared.Field{Key: "error", Value: err},
 			shared.Field{Key: "sessionId", Value: s.id})
-		_ = s.sendErrorMsg(sharedconstants.LoginFailedErrorCode, constants.LoginFailedMsg)
+		_ = s.sendErrorMsg(sharedconstants.LoginFailedErrorCode, sharedconstants.LoginFailedMsg)
 		return
 	}
 
@@ -194,12 +194,12 @@ func (s *serverSession) handleLogin(packet []byte) {
 	username := utils.ReadStringFromBytes(msg.Account[:])
 	password := utils.ReadStringFromBytes(msg.Password[:])
 	if !s.server.loginServerClient.IsLoggedIn(id) {
-		_ = s.sendErrorMsg(sharedconstants.LoginFailedErrorCode, constants.LoginFailedMsg)
+		_ = s.sendErrorMsg(sharedconstants.LoginFailedErrorCode, sharedconstants.LoginFailedMsg)
 		return
 	}
 
 	if s.server.players.HasPlayer(id) {
-		_ = s.sendErrorMsg(sharedconstants.LoginFailedErrorCode, constants.AccountAlreadyLoggedInMsg)
+		_ = s.sendErrorMsg(sharedconstants.LoginFailedErrorCode, sharedconstants.AccountAlreadyLoggedInMsg)
 		return
 	}
 
@@ -208,7 +208,7 @@ func (s *serverSession) handleLogin(packet []byte) {
 		s.server.Logger.Error("Failed to get account",
 			shared.Field{Key: "error", Value: err},
 			shared.Field{Key: "sessionId", Value: s.id})
-		_ = s.sendErrorMsg(sharedconstants.LoginFailedErrorCode, constants.LoginFailedMsg)
+		_ = s.sendErrorMsg(sharedconstants.LoginFailedErrorCode, sharedconstants.LoginFailedMsg)
 		return
 	}
 
@@ -217,12 +217,12 @@ func (s *serverSession) handleLogin(packet []byte) {
 			shared.Field{Key: "expected", Value: account.Username},
 			shared.Field{Key: "actual", Value: username},
 			shared.Field{Key: "sessionId", Value: s.id})
-		_ = s.sendErrorMsg(sharedconstants.LoginFailedErrorCode, constants.LoginFailedMsg)
+		_ = s.sendErrorMsg(sharedconstants.LoginFailedErrorCode, sharedconstants.LoginFailedMsg)
 		return
 	}
 
 	if account.IsOnline {
-		_ = s.sendErrorMsg(sharedconstants.LoginFailedErrorCode, constants.AccountAlreadyLoggedInMsg)
+		_ = s.sendErrorMsg(sharedconstants.LoginFailedErrorCode, sharedconstants.AccountAlreadyLoggedInMsg)
 		return
 	}
 
@@ -230,7 +230,7 @@ func (s *serverSession) handleLogin(packet []byte) {
 		s.server.Logger.Error("Failed to set account online",
 			shared.Field{Key: "error", Value: err},
 			shared.Field{Key: "sessionId", Value: s.id})
-		_ = s.sendErrorMsg(sharedconstants.LoginFailedErrorCode, constants.LoginFailedMsg)
+		_ = s.sendErrorMsg(sharedconstants.LoginFailedErrorCode, sharedconstants.LoginFailedMsg)
 		return
 	}
 

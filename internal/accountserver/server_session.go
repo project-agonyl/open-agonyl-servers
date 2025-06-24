@@ -9,7 +9,10 @@ import (
 	"sync"
 
 	"github.com/project-agonyl/open-agonyl-servers/internal/shared"
+	"github.com/project-agonyl/open-agonyl-servers/internal/shared/constants"
+	"github.com/project-agonyl/open-agonyl-servers/internal/shared/messages"
 	"github.com/project-agonyl/open-agonyl-servers/internal/shared/network"
+	"github.com/project-agonyl/open-agonyl-servers/internal/utils"
 )
 
 type accountServerSession struct {
@@ -109,6 +112,10 @@ func (s *accountServerSession) processPacket(packet []byte) {
 		switch cmd {
 		case 0xE0:
 			s.handleGateConnect(packet)
+		case 0xE1:
+			s.handleCharacterListing(packet)
+		case 0xE2:
+			s.handleClientDisconnect(packet)
 		}
 	}
 }
@@ -116,6 +123,40 @@ func (s *accountServerSession) processPacket(packet []byte) {
 func (s *accountServerSession) handleGateConnect(packet []byte) {
 	s.server.Logger.Info(fmt.Sprintf("Gate server %d connected", packet[10]))
 	s.agentId = packet[10]
+}
+
+func (s *accountServerSession) handleCharacterListing(packet []byte) {
+	pcId := binary.LittleEndian.Uint32(packet[4:])
+	_, exists := s.players.Get(pcId)
+	if exists || pcId == 0 {
+		_ = s.sendErrorMsg(pcId, constants.LoginFailedErrorCode, constants.AccountAlreadyLoggedInMsg)
+		return
+	}
+
+	msg, err := messages.ReadMsgGate2AsNewClient(packet)
+	if err != nil {
+		_ = s.sendErrorMsg(pcId, constants.LoginFailedErrorCode, constants.LoginFailedMsg)
+		return
+	}
+
+	player := NewPlayer(pcId, utils.ReadStringFromBytes(msg.Account[:]), utils.ReadStringFromBytes(msg.ClientIP[:]))
+	s.players.Set(pcId, player)
+	// TODO: Send character listing to gate server
+}
+
+func (s *accountServerSession) handleClientDisconnect(packet []byte) {
+	if len(packet) < 8 {
+		return
+	}
+
+	pcId := binary.LittleEndian.Uint32(packet[4:])
+	player, exists := s.players.Get(pcId)
+	if !exists {
+		return
+	}
+
+	s.server.Logger.Info(fmt.Sprintf("Account %s disconnected", player.account))
+	s.players.Delete(pcId)
 }
 
 func (s *accountServerSession) sender() {
@@ -134,4 +175,11 @@ func (s *accountServerSession) sender() {
 			return
 		}
 	}
+}
+
+func (s *accountServerSession) sendErrorMsg(pcId uint32, errorCode uint16, errorMsg string) error {
+	msg := messages.NewMsgS2CError(pcId, errorCode, errorMsg)
+	data := msg.GetBytes()
+	_, err := s.conn.Write(data)
+	return err
 }
