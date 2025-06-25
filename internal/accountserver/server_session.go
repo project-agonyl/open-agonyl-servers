@@ -129,13 +129,13 @@ func (s *accountServerSession) handleCharacterListing(packet []byte) {
 	pcId := binary.LittleEndian.Uint32(packet[4:])
 	_, exists := s.players.Get(pcId)
 	if exists || pcId == 0 {
-		_ = s.sendErrorMsg(pcId, constants.LoginFailedErrorCode, constants.AccountAlreadyLoggedInMsg)
+		_ = s.sendErrorMsg(pcId, constants.ErrorCodeLoginFailed, constants.AccountAlreadyLoggedInMsg)
 		return
 	}
 
 	msg, err := messages.ReadMsgGate2AsNewClient(packet)
 	if err != nil {
-		_ = s.sendErrorMsg(pcId, constants.LoginFailedErrorCode, constants.LoginFailedMsg)
+		_ = s.sendErrorMsg(pcId, constants.ErrorCodeLoginFailed, constants.LoginFailedMsg)
 		return
 	}
 

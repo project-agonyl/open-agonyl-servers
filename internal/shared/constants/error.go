@@ -1,3 +1,9 @@
 package constants
 
-const LoginFailedErrorCode uint16 = 0x1201
+const ErrorCodeDuplicateCharacter uint16 = 0x1104
+
+const ErrorCodeCharacterInvalid uint16 = 0x1106
+
+const ErrorCodeChracterNotFound uint16 = 0x1202
+
+const ErrorCodeLoginFailed uint16 = 0x1201
