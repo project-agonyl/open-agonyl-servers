@@ -21,7 +21,7 @@ type IT0Level struct {
 }
 
 type IT0Property struct {
-	Levels []IT0Level `json:"levels"`
+	Levels []IT0Level
 }
 
 type IT1Property struct {
