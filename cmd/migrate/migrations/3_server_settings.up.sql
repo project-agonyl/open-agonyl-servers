@@ -1,6 +1,7 @@
 CREATE TABLE server_settings (
     id SERIAL PRIMARY KEY,
-    server_name VARCHAR(21) UNIQUE NOT NULL,
+    server_name VARCHAR(21) NOT NULL,
+    server_id SMALLINT UNIQUE NOT NULL,
     settings JSONB,
     metadata JSONB,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
@@ -9,6 +10,7 @@ CREATE TABLE server_settings (
 );
 
 CREATE INDEX idx_server_settings_server_name ON server_settings(server_name);
+CREATE INDEX idx_server_settings_server_id ON server_settings(server_id);
 CREATE INDEX idx_server_settings_created_at ON server_settings(created_at);
 CREATE INDEX idx_server_settings_updated_at ON server_settings(updated_at);
 CREATE INDEX idx_server_settings_deleted_at ON server_settings(deleted_at);
