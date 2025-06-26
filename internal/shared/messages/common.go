@@ -3,6 +3,8 @@ package messages
 import (
 	"bytes"
 	"encoding/binary"
+
+	"github.com/project-agonyl/open-agonyl-servers/internal/shared/messages/protocol"
 )
 
 type Msg interface {
@@ -45,7 +47,7 @@ func (msg *MsgS2CError) GetBytes() []byte {
 
 func NewMsgS2CError(pcId uint32, code uint16, msg string) *MsgS2CError {
 	msgS2CError := MsgS2CError{
-		MsgHead: MsgHead{Protocol: 0x0FFF, MsgHeadNoProtocol: MsgHeadNoProtocol{Ctrl: 0x03, Cmd: 0xFF}},
+		MsgHead: MsgHead{Protocol: protocol.S2CError, MsgHeadNoProtocol: MsgHeadNoProtocol{Ctrl: 0x03, Cmd: 0xFF}},
 		Code:    code,
 	}
 

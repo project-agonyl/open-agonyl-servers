@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 
+	"github.com/project-agonyl/open-agonyl-servers/internal/shared/messages/protocol"
 	"github.com/project-agonyl/open-agonyl-servers/internal/utils"
 )
 
@@ -81,6 +82,52 @@ func NewMsgC2SGateLogin(pcId uint32, account string, password string) *MsgC2SGat
 
 func ReadMsgC2SGateLogin(packet []byte) (*MsgC2SGateLogin, error) {
 	var msg MsgC2SGateLogin
+	if err := binary.Read(bytes.NewReader(packet), binary.LittleEndian, &msg); err != nil {
+		return nil, err
+	}
+
+	return &msg, nil
+}
+
+type MsgC2SAskCreatePlayer struct {
+	MsgHead
+	Class byte
+	Town  byte
+	Name  [0x15]byte
+}
+
+func (msg *MsgC2SAskCreatePlayer) GetSize() uint32 {
+	return uint32(binary.Size(msg))
+}
+
+func (msg *MsgC2SAskCreatePlayer) SetSize() {
+	msg.Size = msg.GetSize()
+}
+
+func (msg *MsgC2SAskCreatePlayer) GetBytes() []byte {
+	var buffer bytes.Buffer
+	_ = binary.Write(&buffer, binary.LittleEndian, msg)
+	return buffer.Bytes()
+}
+
+func NewMsgC2SAskCreatePlayer(pcId uint32, class byte, town byte, name string) *MsgC2SAskCreatePlayer {
+	msg := MsgC2SAskCreatePlayer{
+		MsgHead: MsgHead{
+			Protocol: protocol.C2SAskCreatePlayer,
+			MsgHeadNoProtocol: MsgHeadNoProtocol{
+				Ctrl: 0x01,
+				Cmd:  0x01,
+				PcId: pcId,
+			},
+		},
+	}
+	copy(msg.Name[:], utils.MakeFixedLengthStringBytes(name, 0x15))
+	msg.SetSize()
+	return &msg
+}
+
+func ReadMsgC2SAskCreatePlayer(packet []byte) (*MsgC2SAskCreatePlayer, error) {
+	var msg MsgC2SAskCreatePlayer
 	if err := binary.Read(bytes.NewReader(packet), binary.LittleEndian, &msg); err != nil {
 		return nil, err
 	}
