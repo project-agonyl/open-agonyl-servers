@@ -76,6 +76,19 @@ type IT0ExRaw struct {
 	Levels [5]IT0RawLevelProperties
 }
 
+type IT1Raw struct {
+	Type          uint16
+	Row           uint16
+	Name          [32]byte
+	NPCPrice      uint32
+	Unknown1      uint16
+	RequiredLevel uint16
+	Attribute     uint16
+	BlueOption    uint16
+	RedOption     uint16
+	GreyOption    uint16
+}
+
 func LoadIT0Items(it0FilePath string, it0ExFilePath string) ([]Item, error) {
 	it0File, err := os.Open(it0FilePath)
 	if err != nil {
@@ -157,6 +170,52 @@ func LoadIT0Items(it0FilePath string, it0ExFilePath string) ([]Item, error) {
 					RedOption:           property.RedOption,
 					GreyOption:          property.GreyOption,
 				})
+		}
+	}
+
+	return items, nil
+}
+
+func LoadIT1Items(it1FilePath string) ([]Item, error) {
+	it1File, err := os.Open(it1FilePath)
+	if err != nil {
+		return nil, err
+	}
+
+	defer it1File.Close()
+
+	it1FileStat, err := it1File.Stat()
+	if err != nil {
+		return nil, err
+	}
+
+	totalItems := it1FileStat.Size() / 52
+	items := make([]Item, totalItems)
+	for i := int64(0); i < totalItems; i++ {
+		it1Raw := IT1Raw{}
+		err = binary.Read(it1File, binary.LittleEndian, &it1Raw)
+		if err != nil {
+			return nil, err
+		}
+
+		slotIndex := byte(9)
+		if it1Raw.Type == 4 {
+			slotIndex = byte(8)
+		}
+
+		items[it1Raw.Row] = Item{
+			ItemCode:  uint32((it1Raw.Type << 10) + it1Raw.Row),
+			SlotIndex: slotIndex,
+			ItemName:  utils.ReadStringFromBytes(it1Raw.Name[:]),
+			Itemtype:  byte(it1Raw.Type),
+			NPCPrice:  it1Raw.NPCPrice,
+			IT1Property: &IT1Property{
+				RequiredLevel: it1Raw.RequiredLevel,
+				Attribute:     it1Raw.Attribute,
+				RedOption:     it1Raw.RedOption,
+				GreyOption:    it1Raw.GreyOption,
+				BlueOption:    it1Raw.BlueOption,
+			},
 		}
 	}
 
