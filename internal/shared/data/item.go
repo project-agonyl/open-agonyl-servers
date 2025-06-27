@@ -35,6 +35,7 @@ type IT1Property struct {
 type IT2Property struct {
 	RequiredLevel uint16
 	SkillLevel    uint16
+	Class         uint16
 }
 
 type Item struct {
@@ -87,6 +88,28 @@ type IT1Raw struct {
 	BlueOption    uint16
 	RedOption     uint16
 	GreyOption    uint16
+}
+
+type IT2Raw struct {
+	Type          uint16
+	Row           uint16
+	Name          [32]byte
+	NPCPrice      uint32
+	Class         uint16
+	RequiredLevel uint16
+	Unknown1      uint16
+	SkillLevel    uint16
+}
+
+type IT3Raw struct {
+	Type     uint16
+	Row      uint16
+	Name     [32]byte
+	NPCPrice uint32
+	Unknown1 uint16
+	Unknown2 uint16
+	Unknown3 uint16
+	Unknown4 uint16
 }
 
 func LoadIT0Items(it0FilePath string, it0ExFilePath string) ([]Item, error) {
@@ -216,6 +239,77 @@ func LoadIT1Items(it1FilePath string) ([]Item, error) {
 				GreyOption:    it1Raw.GreyOption,
 				BlueOption:    it1Raw.BlueOption,
 			},
+		}
+	}
+
+	return items, nil
+}
+
+func LoadIT2Items(it2FilePath string) ([]Item, error) {
+	it2File, err := os.Open(it2FilePath)
+	if err != nil {
+		return nil, err
+	}
+
+	defer it2File.Close()
+
+	it2FileStat, err := it2File.Stat()
+	if err != nil {
+		return nil, err
+	}
+
+	totalItems := it2FileStat.Size() / 48
+	items := make([]Item, totalItems)
+	for i := int64(0); i < totalItems; i++ {
+		it2Raw := IT2Raw{}
+		err = binary.Read(it2File, binary.LittleEndian, &it2Raw)
+		if err != nil {
+			return nil, err
+		}
+
+		items[it2Raw.Row] = Item{
+			ItemCode: uint32((it2Raw.Type << 10) + it2Raw.Row),
+			ItemName: utils.ReadStringFromBytes(it2Raw.Name[:]),
+			Itemtype: byte(it2Raw.Type),
+			NPCPrice: it2Raw.NPCPrice,
+			IT2Property: &IT2Property{
+				RequiredLevel: it2Raw.RequiredLevel,
+				SkillLevel:    it2Raw.SkillLevel,
+				Class:         it2Raw.Class,
+			},
+		}
+	}
+
+	return items, nil
+}
+
+func LoadIT3Items(it3FilePath string) ([]Item, error) {
+	it3File, err := os.Open(it3FilePath)
+	if err != nil {
+		return nil, err
+	}
+
+	defer it3File.Close()
+
+	it3FileStat, err := it3File.Stat()
+	if err != nil {
+		return nil, err
+	}
+
+	totalItems := it3FileStat.Size() / 48
+	items := make([]Item, totalItems)
+	for i := int64(0); i < totalItems; i++ {
+		it3Raw := IT3Raw{}
+		err = binary.Read(it3File, binary.LittleEndian, &it3Raw)
+		if err != nil {
+			return nil, err
+		}
+
+		items[it3Raw.Row] = Item{
+			ItemCode: uint32((it3Raw.Type << 10) + it3Raw.Row),
+			ItemName: utils.ReadStringFromBytes(it3Raw.Name[:]),
+			Itemtype: byte(it3Raw.Type),
+			NPCPrice: it3Raw.NPCPrice,
 		}
 	}
 

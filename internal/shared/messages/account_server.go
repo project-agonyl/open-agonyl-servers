@@ -26,7 +26,7 @@ type CharacterInfo struct {
 
 type MsgS2CCharacterList struct {
 	MsgHead
-	CharacterList [5]CharacterInfo
+	CharacterList [0x5]CharacterInfo
 }
 
 func (msg *MsgS2CCharacterList) GetSize() uint32 {
@@ -126,7 +126,6 @@ func NewMsgS2CAnsCreatePlayer(pcId uint32, class byte, name string, wear [0xA]Ch
 			MsgHeadNoProtocol: MsgHeadNoProtocol{Ctrl: 0x03, Cmd: 0x01, PcId: pcId},
 		},
 		Class: class,
-		Name:  [0x15]byte{},
 		Wear:  wear,
 	}
 
