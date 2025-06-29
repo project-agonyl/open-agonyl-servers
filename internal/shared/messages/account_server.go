@@ -133,3 +133,47 @@ func NewMsgS2CAnsCreatePlayer(pcId uint32, class byte, name string, wear [0xA]Ch
 	msg.SetSize()
 	return &msg
 }
+
+type MsgS2CAnsDeletePlayer struct {
+	MsgHead
+	Name [0x15]byte
+}
+
+func (msg *MsgS2CAnsDeletePlayer) GetSize() uint32 {
+	return uint32(binary.Size(msg))
+}
+
+func (msg *MsgS2CAnsDeletePlayer) SetSize() {
+	msg.Size = msg.GetSize()
+}
+
+func (msg *MsgS2CAnsDeletePlayer) GetBytes() []byte {
+	var buffer bytes.Buffer
+	_ = binary.Write(&buffer, binary.LittleEndian, msg)
+	return buffer.Bytes()
+}
+
+func NewMsgS2CAnsDeletePlayer(pcId uint32, name string) *MsgS2CAnsDeletePlayer {
+	msg := MsgS2CAnsDeletePlayer{
+		MsgHead: MsgHead{
+			Protocol: protocol.S2CAnsDeletePlayer,
+			MsgHeadNoProtocol: MsgHeadNoProtocol{
+				Ctrl: 0x01,
+				Cmd:  0x01,
+				PcId: pcId,
+			},
+		},
+	}
+	copy(msg.Name[:], utils.MakeFixedLengthStringBytes(name, 0x15))
+	msg.SetSize()
+	return &msg
+}
+
+func ReadMsgS2CAnsDeletePlayer(packet []byte) (*MsgS2CAnsDeletePlayer, error) {
+	var msg MsgS2CAnsDeletePlayer
+	if err := binary.Read(bytes.NewReader(packet), binary.LittleEndian, &msg); err != nil {
+		return nil, err
+	}
+
+	return &msg, nil
+}
