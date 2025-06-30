@@ -149,15 +149,18 @@ func New() *EnvVars {
 	}
 
 	if _, ok := os.LookupEnv("DYNAMIC_KEY"); !ok {
-		err := os.Setenv("DYNAMIC_KEY", "79984829")
+		err := os.Setenv("DYNAMIC_KEY", "0x04C478BD")
 		if err != nil {
 			slog.Info("Could not set default DYNAMIC_KEY!")
 		}
 	}
 
-	dynamicKey, err := strconv.Atoi(os.Getenv("DYNAMIC_KEY"))
+	var dynamicKey int
+	d, err := strconv.ParseInt(os.Getenv("DYNAMIC_KEY"), 0, 32)
 	if err != nil {
 		dynamicKey = 0x04C478BD
+	} else {
+		dynamicKey = int(d)
 	}
 
 	if _, ok := os.LookupEnv("SERVER_NAME"); !ok {

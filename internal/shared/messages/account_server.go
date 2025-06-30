@@ -19,7 +19,7 @@ type CharacterInfo struct {
 	Name     [0x15]byte
 	LastUsed byte
 	Class    byte
-	Town     byte
+	Nation   byte
 	Level    uint32
 	Wear     [0xA]CharacterWear
 }

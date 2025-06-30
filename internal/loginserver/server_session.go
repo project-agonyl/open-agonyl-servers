@@ -14,6 +14,7 @@ import (
 	"github.com/project-agonyl/open-agonyl-servers/internal/loginserver/constants"
 	"github.com/project-agonyl/open-agonyl-servers/internal/loginserver/db"
 	"github.com/project-agonyl/open-agonyl-servers/internal/shared"
+	sharedConstants "github.com/project-agonyl/open-agonyl-servers/internal/shared/constants"
 	"github.com/project-agonyl/open-agonyl-servers/internal/shared/messages"
 	"github.com/project-agonyl/open-agonyl-servers/internal/shared/network"
 	"github.com/project-agonyl/open-agonyl-servers/internal/utils"
@@ -199,12 +200,12 @@ func (s *loginServerSession) handleLogin(packet []byte) {
 			return
 		}
 
-		if strings.EqualFold(account.Status, constants.AccountStatusBanned) {
+		if strings.EqualFold(account.Status, sharedConstants.AccountStatusBanned) {
 			_ = s.sendClientMsg(constants.AccountBannedMsg)
 			return
 		}
 
-		if !strings.EqualFold(account.Status, constants.AccountStatusActive) {
+		if !strings.EqualFold(account.Status, sharedConstants.AccountStatusActive) {
 			_ = s.sendClientMsg(constants.AccountNotActiveMsg)
 			return
 		}

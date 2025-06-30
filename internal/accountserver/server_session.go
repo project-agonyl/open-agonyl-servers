@@ -11,6 +11,7 @@ import (
 	"github.com/project-agonyl/open-agonyl-servers/internal/shared"
 	"github.com/project-agonyl/open-agonyl-servers/internal/shared/constants"
 	"github.com/project-agonyl/open-agonyl-servers/internal/shared/messages"
+	"github.com/project-agonyl/open-agonyl-servers/internal/shared/messages/protocol"
 	"github.com/project-agonyl/open-agonyl-servers/internal/shared/network"
 	"github.com/project-agonyl/open-agonyl-servers/internal/utils"
 )
@@ -77,7 +78,7 @@ func (s *accountServerSession) Handle() {
 			break
 		}
 
-		s.processPacket(packet)
+		go s.processPacket(packet)
 	}
 }
 
@@ -116,7 +117,20 @@ func (s *accountServerSession) processPacket(packet []byte) {
 			s.handleCharacterListing(packet)
 		case 0xE2:
 			s.handleClientDisconnect(packet)
+		default:
+			s.server.Logger.Error("Unhandled packet", shared.Field{Key: "ctrl", Value: ctrl}, shared.Field{Key: "cmd", Value: cmd})
 		}
+
+	case 0x03:
+		switch cmd {
+		case 0xFF:
+			s.handleProtocolPacket(packet)
+		default:
+			s.server.Logger.Error("Unhandled packet", shared.Field{Key: "ctrl", Value: ctrl}, shared.Field{Key: "cmd", Value: cmd})
+		}
+
+	default:
+		s.server.Logger.Error("Unhandled packet", shared.Field{Key: "ctrl", Value: ctrl}, shared.Field{Key: "cmd", Value: cmd})
 	}
 }
 
@@ -141,7 +155,55 @@ func (s *accountServerSession) handleCharacterListing(packet []byte) {
 
 	player := NewPlayer(pcId, utils.ReadStringFromBytes(msg.Account[:]), utils.ReadStringFromBytes(msg.ClientIP[:]))
 	s.players.Set(pcId, player)
-	// TODO: Send character listing to gate server
+	characters, err := s.server.dbService.GetCharactersForListing(pcId)
+	if err != nil {
+		_ = s.sendErrorMsg(pcId, constants.ErrorCodeLoginFailed, constants.LoginFailedMsg)
+		return
+	}
+
+	if len(characters) == 0 {
+		msg := messages.NewMsgS2CCharacterListEmpty(pcId)
+		data := msg.GetBytes()
+		_ = s.Send(data)
+		return
+	}
+
+	characterList := make([]messages.CharacterInfo, len(characters))
+	for i, character := range characters {
+		lastUsed := byte(0)
+		if i == 0 {
+			lastUsed = 1
+		}
+
+		characterList[i] = messages.CharacterInfo{
+			LastUsed: lastUsed,
+			Class:    character.Class,
+			Level:    character.Level,
+			Nation:   character.Data.SocialInfo.Nation,
+		}
+		copy(characterList[i].Name[:], utils.MakeFixedLengthStringBytes(character.Name, 0x15))
+		for j := 0; j < len(character.Data.Wear); j++ {
+			if j > 9 {
+				break
+			}
+
+			item, exists := s.server.GetItem(character.Data.Wear[j].ItemCode)
+			if !exists {
+				continue
+			}
+
+			characterList[i].Wear[j] = messages.CharacterWear{
+				ItemPtr:    0,
+				ItemCode:   character.Data.Wear[j].ItemCode,
+				ItemOption: character.Data.Wear[j].ItemOption,
+				WearIndex:  uint32(item.SlotIndex),
+			}
+		}
+	}
+
+	listMsg := messages.NewMsgS2CCharacterList(pcId, characterList)
+	data := listMsg.GetBytes()
+	_ = s.Send(data)
 }
 
 func (s *accountServerSession) handleClientDisconnect(packet []byte) {
@@ -180,6 +242,19 @@ func (s *accountServerSession) sender() {
 func (s *accountServerSession) sendErrorMsg(pcId uint32, errorCode uint16, errorMsg string) error {
 	msg := messages.NewMsgS2CError(pcId, errorCode, errorMsg)
 	data := msg.GetBytes()
-	_, err := s.conn.Write(data)
-	return err
+	return s.Send(data)
+}
+
+func (s *accountServerSession) handleProtocolPacket(packet []byte) {
+	if len(packet) < 12 {
+		return
+	}
+
+	proto := binary.LittleEndian.Uint16(packet[10:])
+	switch proto {
+	case protocol.C2SCharLogout:
+		s.handleClientDisconnect(packet)
+	default:
+		s.server.Logger.Error("Unhandled packet", shared.Field{Key: "protocol", Value: proto})
+	}
 }

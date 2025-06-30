@@ -9,6 +9,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"github.com/project-agonyl/open-agonyl-servers/internal/shared"
+	"github.com/project-agonyl/open-agonyl-servers/internal/shared/constants"
 )
 
 type DBService interface {
@@ -64,7 +65,8 @@ func (s *dbService) GetCharactersForListing(accountID uint32) ([]CharacterForLis
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 	qb := psql.Select("id", "name", "class", "level", "character_data").
 		From("characters").
-		Where(sq.Eq{"account_id": accountID})
+		Where(sq.And{sq.Eq{"account_id": accountID}, sq.Eq{"status": constants.CharacterStatusActive}}).
+		OrderBy("last_login DESC")
 
 	query, args, err := qb.ToSql()
 	if err != nil {
@@ -91,11 +93,11 @@ type Account struct {
 }
 
 type CharacterForListing struct {
-	ID    uint32         `db:"id"`
-	Name  string         `db:"name"`
-	Class byte           `db:"class"`
-	Level byte           `db:"level"`
-	Data  *CharacterData `db:"character_data"`
+	ID    uint32        `db:"id"`
+	Name  string        `db:"name"`
+	Class byte          `db:"class"`
+	Level uint32        `db:"level"`
+	Data  CharacterData `db:"character_data"`
 }
 
 type CharacterData struct {
@@ -122,7 +124,7 @@ func (c *CharacterData) Scan(value interface{}) error {
 	return json.Unmarshal(bytes, c)
 }
 
-func (c CharacterData) Value() (driver.Value, error) {
+func (c *CharacterData) Value() (driver.Value, error) {
 	return json.Marshal(c)
 }
 

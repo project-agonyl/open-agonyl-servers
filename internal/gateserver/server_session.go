@@ -82,7 +82,7 @@ func (s *serverSession) Handle() {
 			break
 		}
 
-		s.processPacket(packet)
+		go s.processPacket(packet)
 	}
 }
 
@@ -235,6 +235,7 @@ func (s *serverSession) handleLogin(packet []byte) {
 	}
 
 	s.player = NewPlayer(id, username, s.conn, s.server.Logger)
+	s.server.players.Add(s.player)
 	go func(session *serverSession) {
 		_ = session.server.loginServerClient.Send(messages.NewMsgGate2LsPreparedAccLogin(username).GetBytes())
 	}(s)

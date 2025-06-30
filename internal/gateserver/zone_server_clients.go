@@ -20,6 +20,7 @@ func NewZoneServerClients(cfg *config.EnvVars, crypto crypto.Crypto, players *Pl
 	for _, zoneServer := range cfg.ZoneServers {
 		server := NewZoneServerClient(
 			byte(zoneServer.ID),
+			cfg.ServerId,
 			zoneServer.IP,
 			uint32(zoneServer.Port),
 			logger,

@@ -15,7 +15,6 @@ CREATE TABLE characters (
     
     status character_status NOT NULL DEFAULT 'active',
     is_online BOOLEAN DEFAULT false,
-    is_last_used BOOLEAN DEFAULT false,
     last_login TIMESTAMP WITH TIME ZONE,
     last_logout TIMESTAMP WITH TIME ZONE,
     

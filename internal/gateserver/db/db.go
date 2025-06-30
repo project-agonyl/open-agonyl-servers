@@ -5,6 +5,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"github.com/project-agonyl/open-agonyl-servers/internal/shared"
+	"github.com/project-agonyl/open-agonyl-servers/internal/shared/constants"
 )
 
 type DBService interface {
@@ -39,7 +40,7 @@ func (s *dbService) GetAccount(id uint32) (*Account, error) {
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 	qb := psql.Select("id", "username", "password_hash", "status", "is_online").
 		From("accounts").
-		Where(sq.And{sq.Eq{"id": id}, sq.Eq{"status": "active"}})
+		Where(sq.And{sq.Eq{"id": id}, sq.Eq{"status": constants.AccountStatusActive}})
 
 	query, args, err := qb.ToSql()
 	if err != nil {

@@ -1,7 +1,42 @@
 package main
 
-import "fmt"
+import (
+	"os"
+	"os/signal"
+	"syscall"
+
+	"github.com/project-agonyl/open-agonyl-servers/internal/accountserver"
+	"github.com/project-agonyl/open-agonyl-servers/internal/accountserver/config"
+	"github.com/project-agonyl/open-agonyl-servers/internal/accountserver/db"
+	"github.com/project-agonyl/open-agonyl-servers/internal/shared"
+)
 
 func main() {
-	fmt.Println("Account Server")
+	cfg := config.New()
+	logger := shared.NewZerologFileLogger("account-server", "logs", cfg.GetZerologLevel())
+	defer func(l shared.Logger) {
+		_ = l.Close()
+	}(logger)
+	logger.Info("Starting Account Server service...")
+	db, err := db.NewDbService(cfg.DatabaseURL, logger)
+	if err != nil {
+		logger.Error("Failed to create db service", shared.Field{Key: "error", Value: err})
+		os.Exit(1)
+	}
+
+	server := accountserver.NewServer(cfg, db, logger)
+	go func(s *accountserver.Server) {
+		err := s.Start()
+		if err != nil {
+			logger.Error("Failed to start account server", shared.Field{Key: "error", Value: err})
+			panic(err)
+		}
+	}(server)
+
+	interruptChan := make(chan os.Signal, 1)
+	signal.Notify(interruptChan, os.Interrupt, syscall.SIGTERM)
+	<-interruptChan
+	logger.Info("Shutting down Account Server service...")
+	server.Stop()
+	_ = db.Close()
 }

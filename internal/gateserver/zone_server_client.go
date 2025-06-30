@@ -17,6 +17,7 @@ import (
 
 type ZoneServerClient struct {
 	id              byte
+	agentId         byte
 	name            string
 	ip              string
 	port            uint32
@@ -34,13 +35,14 @@ type ZoneServerClient struct {
 	isConnected     bool
 }
 
-func NewZoneServerClient(id byte, ip string, port uint32, logger shared.Logger, players *Players, crypto crypto.Crypto) *ZoneServerClient {
+func NewZoneServerClient(id byte, agentId byte, ip string, port uint32, logger shared.Logger, players *Players, crypto crypto.Crypto) *ZoneServerClient {
 	return &ZoneServerClient{
 		id:             id,
+		agentId:        agentId,
 		ip:             ip,
 		port:           port,
 		addr:           fmt.Sprintf("%s:%d", ip, port),
-		name:           fmt.Sprintf("zone server %d", id),
+		name:           fmt.Sprintf("server %d", id),
 		logger:         logger,
 		reconnectDelay: 10 * time.Second,
 		players:        players,
@@ -130,10 +132,16 @@ func (c *ZoneServerClient) handleConnection() {
 		_ = c.conn.Close()
 		c.conn = nil
 		c.isConnected = false
+		c.logger.Info(
+			fmt.Sprintf("Disconnected from %s", c.name),
+			shared.Field{Key: "addr", Value: c.addr},
+			shared.Field{Key: "name", Value: c.name},
+			shared.Field{Key: "serverId", Value: c.id},
+		)
 	}()
 	c.wg.Add(1)
 	go c.sender()
-	msg := messages.NewMsgGate2ZsConnect(c.id)
+	msg := messages.NewMsgGate2ZsConnect(c.agentId)
 	err := c.Send(msg.GetBytes())
 	if err != nil {
 		c.logger.Error(

@@ -16,6 +16,9 @@ import (
 func main() {
 	cfg := config.New()
 	logger := shared.NewZerologFileLogger("login-server", "logs", cfg.GetZerologLevel())
+	defer func(l shared.Logger) {
+		_ = l.Close()
+	}(logger)
 	logger.Info(
 		"Starting Login Server service...",
 		shared.Field{Key: "autoCreateAccount", Value: cfg.AutoCreateAccount},
@@ -60,5 +63,4 @@ func main() {
 	broker.Stop()
 	server.Stop()
 	_ = db.Close()
-	_ = logger.Close()
 }

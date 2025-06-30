@@ -7,8 +7,8 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
-	"github.com/project-agonyl/open-agonyl-servers/internal/loginserver/constants"
 	"github.com/project-agonyl/open-agonyl-servers/internal/shared"
+	sharedConstants "github.com/project-agonyl/open-agonyl-servers/internal/shared/constants"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -84,7 +84,7 @@ func (s *dbService) GetOrCreateAccount(username string, password string) (*Accou
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 	qb := psql.Insert("accounts").
 		Columns("username", "password_hash", "status", "email").
-		Values(username, string(passwordHash), constants.AccountStatusActive, username+"@a3agonyl.com").
+		Values(username, string(passwordHash), sharedConstants.AccountStatusActive, username+"@a3agonyl.com").
 		Suffix("RETURNING id, username, password_hash, status, is_online")
 
 	query, args, err := qb.ToSql()

@@ -19,11 +19,12 @@ type EnvVars struct {
 	CacheServerPassword string
 	CacheTlsEnabled     bool
 	CacheKeyPrefix      string
+	ZoneDataItemPath    string
 }
 
 func New() *EnvVars {
 	if _, ok := os.LookupEnv("PORT"); !ok {
-		err := os.Setenv("PORT", "3550")
+		err := os.Setenv("PORT", "5589")
 		if err != nil {
 			slog.Info("Could not set default PORT!")
 		}
@@ -90,6 +91,13 @@ func New() *EnvVars {
 		}
 	}
 
+	if _, ok := os.LookupEnv("ZONE_DATA_ITEM_PATH"); !ok {
+		err := os.Setenv("ZONE_DATA_ITEM_PATH", "ZoneData/Item")
+		if err != nil {
+			slog.Info("Could not set default ZONE_DATA_ITEM_PATH!")
+		}
+	}
+
 	return &EnvVars{
 		Port:                os.Getenv("PORT"),
 		IpAddress:           os.Getenv("IP_ADDRESS"),
@@ -100,6 +108,7 @@ func New() *EnvVars {
 		CacheServerPassword: os.Getenv("CACHE_SERVER_PASSWORD"),
 		CacheTlsEnabled:     cacheTlsEnabled,
 		CacheKeyPrefix:      os.Getenv("CACHE_KEY_PREFIX"),
+		ZoneDataItemPath:    os.Getenv("ZONE_DATA_ITEM_PATH"),
 	}
 }
 

@@ -15,6 +15,9 @@ import (
 func main() {
 	cfg := config.New()
 	logger := shared.NewZerologFileLogger("gate-server", "logs", cfg.GetZerologLevel())
+	defer func(l shared.Logger) {
+		_ = l.Close()
+	}(logger)
 	logger.Info("Starting Gate Server service...")
 	db, err := db.NewDbService(cfg.DatabaseURL, logger)
 	if err != nil {
@@ -45,5 +48,4 @@ func main() {
 	zsClients.Stop()
 	lsClient.Stop()
 	_ = db.Close()
-	_ = logger.Close()
 }
