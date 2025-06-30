@@ -172,13 +172,8 @@ func (s *accountServerSession) handleCharacterListing(packet []byte) {
 
 	characterList := make([]messages.CharacterInfo, len(characters))
 	for i, character := range characters {
-		lastUsed := byte(0)
-		if i == 0 {
-			lastUsed = 1
-		}
-
 		characterList[i] = messages.CharacterInfo{
-			LastUsed: lastUsed,
+			SlotUsed: 1,
 			Class:    character.Class,
 			Level:    character.Level,
 			Nation:   character.Data.SocialInfo.Nation,

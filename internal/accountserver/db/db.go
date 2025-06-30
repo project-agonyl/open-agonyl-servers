@@ -70,7 +70,7 @@ func (s *dbService) GetCharactersForListing(accountID uint32) ([]CharacterForLis
 	qb := psql.Select("id", "name", "class", "level", "character_data").
 		From("characters").
 		Where(sq.And{sq.Eq{"account_id": accountID}, sq.Eq{"status": constants.CharacterStatusActive}}).
-		OrderBy("last_login DESC")
+		OrderBy("last_login DESC", "id ASC")
 
 	query, args, err := qb.ToSql()
 	if err != nil {

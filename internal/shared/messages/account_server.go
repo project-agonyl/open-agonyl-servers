@@ -17,7 +17,7 @@ type CharacterWear struct {
 
 type CharacterInfo struct {
 	Name     [0x15]byte
-	LastUsed byte
+	SlotUsed byte
 	Class    byte
 	Nation   byte
 	Level    uint32
