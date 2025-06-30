@@ -3,11 +3,13 @@ package accountserver
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net"
 	"sync"
 
+	"github.com/project-agonyl/open-agonyl-servers/internal/accountserver/db"
 	"github.com/project-agonyl/open-agonyl-servers/internal/shared"
 	"github.com/project-agonyl/open-agonyl-servers/internal/shared/constants"
 	"github.com/project-agonyl/open-agonyl-servers/internal/shared/messages"
@@ -254,7 +256,150 @@ func (s *accountServerSession) handleProtocolPacket(packet []byte) {
 	switch proto {
 	case protocol.C2SCharLogout:
 		s.handleClientDisconnect(packet)
+	case protocol.C2SAskCreatePlayer:
+		s.handleCharacterCreate(packet)
 	default:
 		s.server.Logger.Error("Unhandled packet", shared.Field{Key: "protocol", Value: proto})
 	}
+}
+
+func (s *accountServerSession) handleCharacterCreate(packet []byte) {
+	msg, err := messages.ReadMsgC2SAskCreatePlayer(packet)
+	if err != nil {
+		return
+	}
+
+	name := utils.ReadStringFromBytes(msg.Name[:])
+	exists, err := s.server.dbService.DoesCharacterExist(name)
+	if exists || err != nil {
+		_ = s.sendErrorMsg(msg.PcId, constants.ErrorCodeDuplicateCharacter, constants.DuplicateCharacterMsg)
+		return
+	}
+
+	count, err := s.server.dbService.GetCharacterCount(msg.PcId)
+	if count >= constants.MaxCharactersPerAccount || err != nil {
+		_ = s.sendErrorMsg(msg.PcId, constants.ErrorCodeChracterNotFound, constants.MaxCharactersPerAccountExceededMsg)
+		return
+	}
+
+	var data db.CharacterData
+	switch msg.Town {
+	case 0x01:
+		data.SocialInfo.Nation = 1
+		data.Location.MapCode = 7
+		data.Location.Position.X = 110
+		data.Location.Position.Y = 110
+	default:
+		data.SocialInfo.Nation = 0
+		data.Location.MapCode = 1
+		data.Location.Position.X = 110
+		data.Location.Position.Y = 110
+	}
+
+	switch msg.Class {
+	case 0x01:
+		data.Stats.Strength = 30
+		data.Stats.Dexterity = 20
+		data.Stats.Vitality = 25
+		data.Stats.Mana = 20
+		data.Stats.HP = 50
+		data.Stats.MP = 30
+		data.Stats.HPCapacity = 110
+		data.Stats.MPCapacity = 40
+		data.Wear = []db.WearItem{
+			{ItemCode: 1048, ItemOption: 0, ItemUniqueCode: 0},
+			{ItemCode: 3322, ItemOption: 0, ItemUniqueCode: 0},
+			{ItemCode: 3307, ItemOption: 0, ItemUniqueCode: 0},
+			{ItemCode: 3297, ItemOption: 0, ItemUniqueCode: 0},
+			{ItemCode: 3302, ItemOption: 0, ItemUniqueCode: 0},
+			{ItemCode: 3317, ItemOption: 0, ItemUniqueCode: 0},
+			{ItemCode: 3312, ItemOption: 0, ItemUniqueCode: 0},
+		}
+	case 0x02:
+		data.Stats.Strength = 20
+		data.Stats.Intelligence = 26
+		data.Stats.Dexterity = 12
+		data.Stats.Vitality = 20
+		data.Stats.Mana = 40
+		data.Stats.HP = 30
+		data.Stats.MP = 80
+		data.Stats.HPCapacity = 30
+		data.Stats.MPCapacity = 120
+		data.Wear = []db.WearItem{
+			{ItemCode: 2066, ItemOption: 0, ItemUniqueCode: 0},
+			{ItemCode: 3337, ItemOption: 0, ItemUniqueCode: 0},
+			{ItemCode: 3327, ItemOption: 0, ItemUniqueCode: 0},
+			{ItemCode: 3332, ItemOption: 0, ItemUniqueCode: 0},
+			{ItemCode: 3347, ItemOption: 0, ItemUniqueCode: 0},
+			{ItemCode: 3342, ItemOption: 0, ItemUniqueCode: 0},
+		}
+	case 0x03:
+		data.Stats.Strength = 30
+		data.Stats.Dexterity = 16
+		data.Stats.Vitality = 25
+		data.Stats.Mana = 25
+		data.Stats.HP = 75
+		data.Stats.MP = 37
+		data.Stats.HPCapacity = 100
+		data.Stats.MPCapacity = 50
+		data.Wear = []db.WearItem{
+			{ItemCode: 1110, ItemOption: 0, ItemUniqueCode: 0},
+			{ItemCode: 3677, ItemOption: 0, ItemUniqueCode: 0},
+			{ItemCode: 3657, ItemOption: 0, ItemUniqueCode: 0},
+			{ItemCode: 3667, ItemOption: 0, ItemUniqueCode: 0},
+			{ItemCode: 3697, ItemOption: 0, ItemUniqueCode: 0},
+			{ItemCode: 3687, ItemOption: 0, ItemUniqueCode: 0},
+		}
+	default:
+		data.Stats.Strength = 30
+		data.Stats.Dexterity = 16
+		data.Stats.Vitality = 30
+		data.Stats.Mana = 20
+		data.Stats.HP = 75
+		data.Stats.MP = 20
+		data.Stats.HPCapacity = 120
+		data.Stats.MPCapacity = 30
+		data.Wear = []db.WearItem{
+			{ItemCode: 1024, ItemOption: 0, ItemUniqueCode: 0},
+			{ItemCode: 3282, ItemOption: 0, ItemUniqueCode: 0},
+			{ItemCode: 3272, ItemOption: 0, ItemUniqueCode: 0},
+			{ItemCode: 3277, ItemOption: 0, ItemUniqueCode: 0},
+			{ItemCode: 3292, ItemOption: 0, ItemUniqueCode: 0},
+			{ItemCode: 3287, ItemOption: 0, ItemUniqueCode: 0},
+		}
+	}
+
+	bytes, err := json.Marshal(data)
+	if err != nil {
+		_ = s.sendErrorMsg(msg.PcId, constants.ErrorCodeChracterNotFound, constants.LoginFailedMsg)
+		return
+	}
+
+	_, err = s.server.dbService.CreateCharacter(msg.PcId, name, msg.Class, bytes)
+	if err != nil {
+		_ = s.sendErrorMsg(msg.PcId, constants.ErrorCodeChracterNotFound, constants.LoginFailedMsg)
+		return
+	}
+
+	wear := [0xA]messages.CharacterWear{}
+	for i := 0; i < len(data.Wear); i++ {
+		if i > 9 {
+			break
+		}
+
+		item, exists := s.server.GetItem(data.Wear[i].ItemCode)
+		if !exists {
+			continue
+		}
+
+		wear[i] = messages.CharacterWear{
+			ItemPtr:    0,
+			ItemCode:   data.Wear[i].ItemCode,
+			ItemOption: data.Wear[i].ItemOption,
+			WearIndex:  uint32(item.SlotIndex),
+		}
+	}
+
+	replyMsg := messages.NewMsgS2CAnsCreatePlayer(msg.PcId, msg.Class, name, wear)
+	_ = s.Send(replyMsg.GetBytes())
 }

@@ -123,7 +123,7 @@ func NewMsgS2CAnsCreatePlayer(pcId uint32, class byte, name string, wear [0xA]Ch
 	msg := MsgS2CAnsCreatePlayer{
 		MsgHead: MsgHead{
 			Protocol:          protocol.S2CAnsCreatePlayer,
-			MsgHeadNoProtocol: MsgHeadNoProtocol{Ctrl: 0x03, Cmd: 0x01, PcId: pcId},
+			MsgHeadNoProtocol: MsgHeadNoProtocol{Ctrl: 0x03, Cmd: 0xFF, PcId: pcId},
 		},
 		Class: class,
 		Wear:  wear,
@@ -158,8 +158,8 @@ func NewMsgS2CAnsDeletePlayer(pcId uint32, name string) *MsgS2CAnsDeletePlayer {
 		MsgHead: MsgHead{
 			Protocol: protocol.S2CAnsDeletePlayer,
 			MsgHeadNoProtocol: MsgHeadNoProtocol{
-				Ctrl: 0x01,
-				Cmd:  0x01,
+				Ctrl: 0x03,
+				Cmd:  0xFF,
 				PcId: pcId,
 			},
 		},

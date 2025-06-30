@@ -1,6 +1,7 @@
 package db
 
 import (
+	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
@@ -15,6 +16,9 @@ import (
 type DBService interface {
 	GetAccount(id uint32) (*Account, error)
 	GetCharactersForListing(accountID uint32) ([]CharacterForListing, error)
+	DoesCharacterExist(name string) (bool, error)
+	GetCharacterCount(accountID uint32) (int, error)
+	CreateCharacter(accountID uint32, name string, class byte, characterData []byte) (uint32, error)
 	Close() error
 }
 
@@ -82,6 +86,78 @@ func (s *dbService) GetCharactersForListing(accountID uint32) ([]CharacterForLis
 	}
 
 	return characters, nil
+}
+
+func (s *dbService) DoesCharacterExist(name string) (bool, error) {
+	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+	qb := psql.Select("id").
+		From("characters").
+		Where(sq.Eq{"name": name}).
+		Limit(1)
+
+	query, args, err := qb.ToSql()
+	if err != nil {
+		s.logger.Error("Failed to build does character exist query", shared.Field{Key: "error", Value: err})
+		return false, err
+	}
+
+	count := 0
+	err = s.db.Get(&count, query, args...)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return false, nil
+		}
+
+		s.logger.Error("Failed to execute does character exist query", shared.Field{Key: "error", Value: err})
+		return false, err
+	}
+
+	return count > 0, nil
+}
+
+func (s *dbService) GetCharacterCount(accountID uint32) (int, error) {
+	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+	qb := psql.Select("COUNT(*)").
+		From("characters").
+		Where(sq.And{sq.Eq{"account_id": accountID}, sq.Eq{"status": constants.CharacterStatusActive}})
+
+	query, args, err := qb.ToSql()
+	if err != nil {
+		s.logger.Error("Failed to build get character count query", shared.Field{Key: "error", Value: err})
+		return 0, err
+	}
+
+	count := 0
+	err = s.db.Get(&count, query, args...)
+	if err != nil {
+		s.logger.Error("Failed to execute get character count query", shared.Field{Key: "error", Value: err})
+		return 0, err
+	}
+
+	return count, nil
+}
+
+func (s *dbService) CreateCharacter(accountID uint32, name string, class byte, characterData []byte) (uint32, error) {
+	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+	qb := psql.Insert("characters").
+		Columns("account_id", "name", "class", "character_data").
+		Values(accountID, name, class, characterData).
+		Suffix("RETURNING id")
+
+	query, args, err := qb.ToSql()
+	if err != nil {
+		s.logger.Error("Failed to build create character query", shared.Field{Key: "error", Value: err})
+		return 0, err
+	}
+
+	id := uint32(0)
+	err = s.db.Get(&id, query, args...)
+	if err != nil {
+		s.logger.Error("Failed to execute create character query", shared.Field{Key: "error", Value: err})
+		return 0, err
+	}
+
+	return id, nil
 }
 
 type Account struct {

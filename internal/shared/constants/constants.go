@@ -6,6 +6,12 @@ const LoginFailedMsg = "Login failed."
 
 const AccountAlreadyLoggedInMsg = "Account is already logged in."
 
+const DuplicateCharacterMsg = "Character already exists."
+
+const MaxCharactersPerAccountExceededMsg = "Max characters per account exceeded."
+
+const MaxCharactersPerAccount = 5
+
 const (
 	AccountStatusActive              = "active"
 	AccountStatusInactive            = "inactive"
