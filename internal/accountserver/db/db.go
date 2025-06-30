@@ -1,6 +1,10 @@
 package db
 
 import (
+	"database/sql/driver"
+	"encoding/json"
+	"errors"
+
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
@@ -9,6 +13,7 @@ import (
 
 type DBService interface {
 	GetAccount(id uint32) (*Account, error)
+	GetCharactersForListing(accountID uint32) ([]CharacterForListing, error)
 	Close() error
 }
 
@@ -55,10 +60,141 @@ func (s *dbService) GetAccount(id uint32) (*Account, error) {
 	return account, nil
 }
 
+func (s *dbService) GetCharactersForListing(accountID uint32) ([]CharacterForListing, error) {
+	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+	qb := psql.Select("id", "name", "class", "level", "character_data").
+		From("characters").
+		Where(sq.Eq{"account_id": accountID})
+
+	query, args, err := qb.ToSql()
+	if err != nil {
+		s.logger.Error("Failed to build get characters for listing query", shared.Field{Key: "error", Value: err})
+		return nil, err
+	}
+
+	characters := []CharacterForListing{}
+	err = s.db.Select(&characters, query, args...)
+	if err != nil {
+		s.logger.Error("Failed to execute get characters for listing query", shared.Field{Key: "error", Value: err})
+		return nil, err
+	}
+
+	return characters, nil
+}
+
 type Account struct {
 	ID           uint32 `db:"id"`
 	Username     string `db:"username"`
 	PasswordHash string `db:"password_hash"`
 	Status       string `db:"status"`
 	IsOnline     bool   `db:"is_online"`
+}
+
+type CharacterForListing struct {
+	ID    uint32         `db:"id"`
+	Name  string         `db:"name"`
+	Class byte           `db:"class"`
+	Level byte           `db:"level"`
+	Data  *CharacterData `db:"character_data"`
+}
+
+type CharacterData struct {
+	Parole       uint32          `json:"parole"`
+	SocialInfo   SocialInfo      `json:"social_info"`
+	Wear         []WearItem      `json:"wear"`
+	Inventory    []InventoryItem `json:"inventory"`
+	Lore         uint32          `json:"lore"`
+	Location     Location        `json:"location"`
+	CurrentQuest QuestInfo       `json:"current_quest"`
+	Skills       []SkillInfo     `json:"skills"`
+	Stats        Stats           `json:"stats"`
+	NPCFavors    []NPCFavor      `json:"npc_favors"`
+	ActivePet    Pet             `json:"active_pet"`
+	PetInventory []PetInventory  `json:"pet_inventory"`
+}
+
+func (c *CharacterData) Scan(value interface{}) error {
+	bytes, ok := value.([]byte)
+	if !ok {
+		return errors.New("CharacterData: type assertion to []byte failed")
+	}
+
+	return json.Unmarshal(bytes, c)
+}
+
+func (c CharacterData) Value() (driver.Value, error) {
+	return json.Marshal(c)
+}
+
+type SocialInfo struct {
+	Nation  byte `json:"nation"`
+	KHIndex byte `json:"kh_index"`
+}
+
+type WearItem struct {
+	ItemCode       uint32 `json:"item_code"`
+	ItemOption     uint32 `json:"item_option"`
+	ItemUniqueCode uint32 `json:"item_unique_code"`
+}
+
+type InventoryItem struct {
+	ItemCode       uint32 `json:"item_code"`
+	ItemOption     uint32 `json:"item_option"`
+	ItemUniqueCode uint32 `json:"item_unique_code"`
+	Slot           byte   `json:"slot"`
+}
+
+type Location struct {
+	MapCode  uint16   `json:"map_code"`
+	Position Position `json:"position"`
+}
+
+type Position struct {
+	X byte `json:"x"`
+	Y byte `json:"y"`
+}
+
+type QuestInfo struct {
+	QuestID   uint32 `json:"quest_id"`
+	Progress1 uint32 `json:"progress1"`
+	Progress2 uint32 `json:"progress2"`
+	Progress3 uint32 `json:"progress3"`
+}
+
+type SkillInfo struct {
+	SkillID uint32 `json:"skill_id"`
+	Level   uint32 `json:"level"`
+}
+
+type Stats struct {
+	Strength        uint16 `json:"strength"`
+	Intelligence    uint16 `json:"intelligence"`
+	Dexterity       uint16 `json:"dexterity"`
+	Vitality        uint16 `json:"vitality"`
+	Mana            uint16 `json:"mana"`
+	RemainingPoints uint16 `json:"remaining_points"`
+	HP              uint16 `json:"hp"`
+	MP              uint16 `json:"mp"`
+	HPCapacity      uint16 `json:"hp_capacity"`
+	MPCapacity      uint16 `json:"mp_capacity"`
+}
+
+type NPCFavor struct {
+	NPCID uint32 `json:"npc_id"`
+	Favor uint16 `json:"favor"`
+}
+
+type Pet struct {
+	PetCode       uint32 `json:"pet_code"`
+	PetHP         uint32 `json:"pet_hp"`
+	PetOption     uint32 `json:"pet_option"`
+	PetUniqueCode uint32 `json:"pet_unique_code"`
+}
+
+type PetInventory struct {
+	PetCode       uint32 `json:"pet_code"`
+	PetHP         uint32 `json:"pet_hp"`
+	PetOption     uint32 `json:"pet_option"`
+	PetUniqueCode uint32 `json:"pet_unique_code"`
+	Slot          byte   `json:"slot"`
 }
