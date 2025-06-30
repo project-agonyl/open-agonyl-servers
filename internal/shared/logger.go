@@ -172,9 +172,7 @@ func (w *DailyFileWriter) autoRotate() {
 			}
 
 			w.mu.Lock()
-			if err := w.rotateInternal(); err != nil {
-			}
-
+			_ = w.rotateInternal()
 			w.mu.Unlock()
 		}
 	}
@@ -200,9 +198,7 @@ func (w *DailyFileWriter) rotateInternal() error {
 	}
 
 	if w.file != nil {
-		if err := w.file.Close(); err != nil {
-		}
-
+		_ = w.file.Close()
 		w.file = nil
 	}
 
