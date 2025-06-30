@@ -11,12 +11,11 @@ import (
 	"github.com/project-agonyl/open-agonyl-servers/internal/loginserver/config"
 	"github.com/project-agonyl/open-agonyl-servers/internal/loginserver/db"
 	"github.com/project-agonyl/open-agonyl-servers/internal/shared"
-	"github.com/rs/zerolog"
 )
 
 func main() {
 	cfg := config.New()
-	logger := shared.NewZerologLogger(zerolog.New(os.Stdout), "login-server", cfg.GetZerologLevel())
+	logger := shared.NewZerologFileLogger("login-server", "logs", cfg.GetZerologLevel())
 	logger.Info(
 		"Starting Login Server service...",
 		shared.Field{Key: "autoCreateAccount", Value: cfg.AutoCreateAccount},
@@ -61,4 +60,5 @@ func main() {
 	broker.Stop()
 	server.Stop()
 	_ = db.Close()
+	_ = logger.Close()
 }
