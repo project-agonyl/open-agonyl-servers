@@ -19,6 +19,7 @@ type DBService interface {
 	DoesCharacterExist(name string) (bool, error)
 	GetCharacterCount(accountID uint32) (int, error)
 	CreateCharacter(accountID uint32, name string, class byte, characterData []byte) (uint32, error)
+	DeleteCharacter(accountID uint32, name string) error
 	Close() error
 }
 
@@ -158,6 +159,27 @@ func (s *dbService) CreateCharacter(accountID uint32, name string, class byte, c
 	}
 
 	return id, nil
+}
+
+func (s *dbService) DeleteCharacter(accountID uint32, name string) error {
+	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+	qb := psql.Update("characters").
+		Set("status", constants.CharacterStatusDeleted).
+		Where(sq.And{sq.Eq{"account_id": accountID}, sq.Eq{"name": name}})
+
+	query, args, err := qb.ToSql()
+	if err != nil {
+		s.logger.Error("Failed to build delete character query", shared.Field{Key: "error", Value: err})
+		return err
+	}
+
+	_, err = s.db.Exec(query, args...)
+	if err != nil {
+		s.logger.Error("Failed to execute delete character query", shared.Field{Key: "error", Value: err})
+		return err
+	}
+
+	return nil
 }
 
 type Account struct {

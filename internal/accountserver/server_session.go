@@ -253,6 +253,8 @@ func (s *accountServerSession) handleProtocolPacket(packet []byte) {
 		s.handleClientDisconnect(packet)
 	case protocol.C2SAskCreatePlayer:
 		s.handleCharacterCreate(packet)
+	case protocol.C2SAskDeletePlayer:
+		s.handleCharacterDelete(packet)
 	default:
 		s.server.Logger.Error("Unhandled packet", shared.Field{Key: "protocol", Value: proto})
 	}
@@ -396,5 +398,22 @@ func (s *accountServerSession) handleCharacterCreate(packet []byte) {
 	}
 
 	replyMsg := messages.NewMsgS2CAnsCreatePlayer(msg.PcId, msg.Class, name, wear)
+	_ = s.Send(replyMsg.GetBytes())
+}
+
+func (s *accountServerSession) handleCharacterDelete(packet []byte) {
+	msg, err := messages.ReadMsgC2SAskDeletePlayer(packet)
+	if err != nil {
+		return
+	}
+
+	name := utils.ReadStringFromBytes(msg.Name[:])
+	err = s.server.dbService.DeleteCharacter(msg.PcId, name)
+	if err != nil {
+		_ = s.sendErrorMsg(msg.PcId, constants.ErrorCodeChracterNotFound, constants.CharacterNotFoundMsg)
+		return
+	}
+
+	replyMsg := messages.NewMsgS2CAnsDeletePlayer(msg.PcId, name)
 	_ = s.Send(replyMsg.GetBytes())
 }

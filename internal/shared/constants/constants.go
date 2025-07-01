@@ -12,6 +12,8 @@ const MaxCharactersPerAccountExceededMsg = "Max characters per account exceeded.
 
 const MaxCharactersPerAccount = 5
 
+const CharacterNotFoundMsg = "Character not found."
+
 const (
 	AccountStatusActive              = "active"
 	AccountStatusInactive            = "inactive"
