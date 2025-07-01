@@ -15,7 +15,7 @@ RUN go mod download
 COPY . .
 
 # Build the Go binary
-RUN go build -ldflags="-w -s" -o login-server ./cmd/login-server
+RUN go build -ldflags="-w -s" -o gate-server ./cmd/gate-server
 
 # Final stage
 FROM alpine:3.19
@@ -24,10 +24,10 @@ FROM alpine:3.19
 WORKDIR /app
 
 # Copy the binary from builder
-COPY --from=builder /app/login-server .
+COPY --from=builder /app/gate-server .
 
 # Define port argument with default value
-ARG PORT=3550
+ARG PORT=9860
 
 # Set PORT environment variable
 ENV PORT=$PORT
@@ -36,4 +36,4 @@ ENV PORT=$PORT
 EXPOSE $PORT
 
 # Run the application
-ENTRYPOINT ["./login-server"]
+ENTRYPOINT ["./gate-server"]
