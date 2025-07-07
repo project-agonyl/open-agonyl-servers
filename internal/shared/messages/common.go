@@ -25,6 +25,13 @@ type MsgHead struct {
 	Protocol uint16
 }
 
+type MsgHeadMs struct {
+	Protocol     uint16
+	Size         uint16
+	PcId         uint32
+	GateServerId byte
+}
+
 type MsgS2CError struct {
 	MsgHead
 	Code uint16
@@ -59,6 +66,44 @@ func NewMsgS2CError(pcId uint32, code uint16, msg string) *MsgS2CError {
 
 func ReadMsgS2CError(packet []byte) (*MsgS2CError, error) {
 	var msg MsgS2CError
+	if err := binary.Read(bytes.NewReader(packet), binary.LittleEndian, &msg); err != nil {
+		return nil, err
+	}
+
+	return &msg, nil
+}
+
+type MsgS2GZoneChange struct {
+	MsgHeadNoProtocol
+	ZoneId byte
+}
+
+func (msg *MsgS2GZoneChange) GetSize() uint32 {
+	return uint32(binary.Size(msg))
+}
+
+func (msg *MsgS2GZoneChange) SetSize() {
+	msg.Size = msg.GetSize()
+}
+
+func (msg *MsgS2GZoneChange) GetBytes() []byte {
+	var buffer bytes.Buffer
+	_ = binary.Write(&buffer, binary.LittleEndian, msg)
+	return buffer.Bytes()
+}
+
+func NewMsgS2GZoneChange(pcId uint32, zoneId byte) MsgS2GZoneChange {
+	msg := MsgS2GZoneChange{
+		MsgHeadNoProtocol: MsgHeadNoProtocol{Ctrl: 0x01, Cmd: 0xE1, PcId: pcId},
+		ZoneId:            zoneId,
+	}
+
+	msg.SetSize()
+	return msg
+}
+
+func ReadMsgS2GZoneChange(packet []byte) (*MsgS2GZoneChange, error) {
+	var msg MsgS2GZoneChange
 	if err := binary.Read(bytes.NewReader(packet), binary.LittleEndian, &msg); err != nil {
 		return nil, err
 	}

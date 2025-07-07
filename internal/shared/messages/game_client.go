@@ -178,3 +178,49 @@ func ReadMsgC2SAskDeletePlayer(packet []byte) (*MsgC2SAskDeletePlayer, error) {
 
 	return &msg, nil
 }
+
+type MsgC2SCharacterLogin struct {
+	MsgHead
+	CharacterName [0x15]byte
+	ClientVersion uint32
+}
+
+func (msg *MsgC2SCharacterLogin) GetSize() uint32 {
+	return uint32(binary.Size(msg))
+}
+
+func (msg *MsgC2SCharacterLogin) SetSize() {
+	msg.Size = msg.GetSize()
+}
+
+func (msg *MsgC2SCharacterLogin) GetBytes() []byte {
+	var buffer bytes.Buffer
+	_ = binary.Write(&buffer, binary.LittleEndian, msg)
+	return buffer.Bytes()
+}
+
+func NewMsgC2SCharacterLogin(pcId uint32, characterName string, clientVersion uint32) *MsgC2SCharacterLogin {
+	msg := MsgC2SCharacterLogin{
+		MsgHead: MsgHead{
+			Protocol: protocol.C2SCharacterLogin,
+			MsgHeadNoProtocol: MsgHeadNoProtocol{
+				Ctrl: 0x01,
+				Cmd:  0x01,
+				PcId: pcId,
+			},
+		},
+	}
+	copy(msg.CharacterName[:], utils.MakeFixedLengthStringBytes(characterName, 0x15))
+	msg.ClientVersion = clientVersion
+	msg.SetSize()
+	return &msg
+}
+
+func ReadMsgC2SCharacterLogin(packet []byte) (*MsgC2SCharacterLogin, error) {
+	var msg MsgC2SCharacterLogin
+	if err := binary.Read(bytes.NewReader(packet), binary.LittleEndian, &msg); err != nil {
+		return nil, err
+	}
+
+	return &msg, nil
+}

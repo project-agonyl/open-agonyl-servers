@@ -15,11 +15,11 @@ const S2CPcAppear uint16 = 0x1100
 const S2CPcDisappear uint16 = 0x1101
 const C2SPrepareUser uint16 = 0x1105
 const S2CCharacterList uint16 = 0x1105
-const C2SCharLogin uint16 = 0x1106
-const S2CCharLoginOk uint16 = 0x1106
+const C2SCharacterLogin uint16 = 0x1106
+const S2CCharacterLoginOk uint16 = 0x1106
 const C2SWorldLogin uint16 = 0x1107
 const S2CWorldLogin uint16 = 0x1107
-const C2SCharLogout uint16 = 0x1108
+const C2SCharacterLogout uint16 = 0x1108
 const S2CCharLogout uint16 = 0x1108
 const C2SWarp uint16 = 0x1111
 const C2SReturn2Here uint16 = 0x1112
@@ -237,10 +237,12 @@ const C2SHsSkillReset uint16 = 0x501E
 
 const C2SAskMigration uint16 = 0x9000
 
+const M2SError uint16 = 0xA000
 const C2SAskCreatePlayer uint16 = 0xA001
 const S2CAnsCreatePlayer uint16 = 0xA001
 const C2SAskDeletePlayer uint16 = 0xA002
 const S2CAnsDeletePlayer uint16 = 0xA002
+const S2MCharacterLogin uint16 = 0xA010
 
 const C2SLeague uint16 = 0xA340
 const C2SReqLeagueClanInfo uint16 = 0xA345

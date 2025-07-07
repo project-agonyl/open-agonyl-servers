@@ -24,7 +24,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	server := accountserver.NewServer(cfg, db, logger)
+	players := accountserver.NewPlayers()
+	mainServerClient := accountserver.NewMainServerClient(cfg.ServerId, cfg.MainServerIpAddress+":"+cfg.MainServerPort, logger, players)
+	go func(c *accountserver.MainServerClient) {
+		c.Start()
+	}(mainServerClient)
+
+	server := accountserver.NewServer(cfg, db, logger, players, mainServerClient)
 	go func(s *accountserver.Server) {
 		err := s.Start()
 		if err != nil {
@@ -38,5 +44,6 @@ func main() {
 	<-interruptChan
 	logger.Info("Shutting down Account Server service...")
 	server.Stop()
+	mainServerClient.Stop()
 	_ = db.Close()
 }

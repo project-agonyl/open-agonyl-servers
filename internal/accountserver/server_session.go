@@ -26,7 +26,6 @@ type accountServerSession struct {
 	done     chan struct{}
 	agentId  byte
 	wg       sync.WaitGroup
-	players  *shared.SafeMap[uint32, *Player]
 }
 
 func newAccountServerSession(id uint32, conn net.Conn) network.TCPServerSession {
@@ -39,7 +38,6 @@ func newAccountServerSession(id uint32, conn net.Conn) network.TCPServerSession 
 		conn:     conn,
 		sendChan: make(chan []byte, 100),
 		done:     make(chan struct{}),
-		players:  shared.NewSafeMap[uint32, *Player](),
 	}
 
 	session.wg.Add(1)
@@ -143,8 +141,7 @@ func (s *accountServerSession) handleGateConnect(packet []byte) {
 
 func (s *accountServerSession) handleCharacterListing(packet []byte) {
 	pcId := binary.LittleEndian.Uint32(packet[4:])
-	_, exists := s.players.Get(pcId)
-	if exists || pcId == 0 {
+	if pcId == 0 {
 		_ = s.sendErrorMsg(pcId, constants.ErrorCodeLoginFailed, constants.AccountAlreadyLoggedInMsg)
 		return
 	}
@@ -155,8 +152,8 @@ func (s *accountServerSession) handleCharacterListing(packet []byte) {
 		return
 	}
 
-	player := NewPlayer(pcId, utils.ReadStringFromBytes(msg.Account[:]), utils.ReadStringFromBytes(msg.ClientIP[:]))
-	s.players.Set(pcId, player)
+	player := NewPlayer(pcId, utils.ReadStringFromBytes(msg.Account[:]), utils.ReadStringFromBytes(msg.ClientIP[:]), s)
+	s.server.players.Add(player)
 	characters, err := s.server.dbService.GetCharactersForListing(pcId)
 	if err != nil {
 		_ = s.sendErrorMsg(pcId, constants.ErrorCodeLoginFailed, constants.LoginFailedMsg)
@@ -209,13 +206,13 @@ func (s *accountServerSession) handleClientDisconnect(packet []byte) {
 	}
 
 	pcId := binary.LittleEndian.Uint32(packet[4:])
-	player, exists := s.players.Get(pcId)
+	player, exists := s.server.players.Get(pcId)
 	if !exists {
 		return
 	}
 
 	s.server.Logger.Info(fmt.Sprintf("Account %s disconnected", player.account))
-	s.players.Delete(pcId)
+	s.server.players.Remove(pcId)
 }
 
 func (s *accountServerSession) sender() {
@@ -249,14 +246,16 @@ func (s *accountServerSession) handleProtocolPacket(packet []byte) {
 
 	proto := binary.LittleEndian.Uint16(packet[10:])
 	switch proto {
-	case protocol.C2SCharLogout:
+	case protocol.C2SCharacterLogout:
 		s.handleClientDisconnect(packet)
 	case protocol.C2SAskCreatePlayer:
 		s.handleCharacterCreate(packet)
 	case protocol.C2SAskDeletePlayer:
 		s.handleCharacterDelete(packet)
+	case protocol.C2SCharacterLogin:
+		s.handleCharacterLogin(packet)
 	default:
-		s.server.Logger.Error("Unhandled packet", shared.Field{Key: "protocol", Value: proto})
+		s.server.Logger.Error("Unhandled packet from gate server", shared.Field{Key: "protocol", Value: proto})
 	}
 }
 
@@ -416,4 +415,32 @@ func (s *accountServerSession) handleCharacterDelete(packet []byte) {
 
 	replyMsg := messages.NewMsgS2CAnsDeletePlayer(msg.PcId, name)
 	_ = s.Send(replyMsg.GetBytes())
+}
+
+func (s *accountServerSession) handleCharacterLogin(packet []byte) {
+	msg, err := messages.ReadMsgC2SCharacterLogin(packet)
+	if err != nil {
+		return
+	}
+
+	characterName := utils.ReadStringFromBytes(msg.CharacterName[:])
+	player, exists := s.server.players.Get(msg.PcId)
+	if !exists {
+		_ = s.sendErrorMsg(msg.PcId, constants.ErrorCodeChracterNotFound, constants.LoginFailedMsg)
+		return
+	}
+
+	if player.GetSelectedCharacterName() != "" {
+		_ = s.sendErrorMsg(msg.PcId, constants.ErrorCodeCharacterInvalid, constants.InvalidCharacterMsg)
+		return
+	}
+
+	if exists, err := s.server.dbService.DoesCharacterExist(characterName); err != nil || !exists {
+		_ = s.sendErrorMsg(msg.PcId, constants.ErrorCodeChracterNotFound, constants.LoginFailedMsg)
+		return
+	}
+
+	player.SetSelectedCharacterName(characterName)
+	msMsg := messages.NewMsgS2MCharacterLogin(msg.PcId, player.account, "", characterName, player.clientIp, s.agentId)
+	_ = s.server.mainServerClient.Send(msMsg.GetBytes())
 }

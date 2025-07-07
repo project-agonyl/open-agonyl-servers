@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"io"
 	"net"
 	"sync"
 
@@ -51,28 +50,33 @@ func (s *mainServerSession) Handle() {
 		close(s.done)
 		s.wg.Wait()
 	}()
+	buffer := make([]byte, 1024*16)
+	dynamicBuffer := bytes.NewBuffer(nil)
 	for {
-		var buf bytes.Buffer
-		if _, err := io.CopyN(&buf, s.conn, 4); err != nil {
+		n, err := s.conn.Read(buffer)
+		if err != nil {
 			break
 		}
 
-		reader := io.MultiReader(&buf, s.conn)
-		dataLength := binary.LittleEndian.Uint32(buf.Bytes())
-		if dataLength == 0 {
+		if n == 5 {
+			packet := buffer[:n]
+			s.serverId = packet[4]
+			s.server.Logger.Info(fmt.Sprintf("Server %d connected", s.serverId),
+				shared.Field{Key: "serverId", Value: s.serverId},
+			)
 			continue
 		}
 
-		if dataLength > 16*1024*1024 {
-			break
-		}
+		dynamicBuffer.Write(buffer[:n])
+		for dynamicBuffer.Len() >= 4 {
+			dataLength := int(binary.LittleEndian.Uint16(dynamicBuffer.Bytes()[2:]))
+			if dataLength > dynamicBuffer.Len() || dataLength == 0 {
+				break
+			}
 
-		packet := make([]byte, dataLength)
-		if _, err := io.ReadFull(reader, packet); err != nil {
-			break
+			currentPacket := dynamicBuffer.Next(dataLength)
+			go s.processPacket(currentPacket)
 		}
-
-		go s.processPacket(packet)
 	}
 }
 
@@ -97,15 +101,6 @@ func (s *mainServerSession) Close() error {
 
 func (s *mainServerSession) processPacket(packet []byte) {
 	if len(packet) < 5 {
-		return
-	}
-
-	if len(packet) == 5 {
-		s.serverId = packet[4]
-		s.server.Logger.Info(fmt.Sprintf("Server %d connected", s.serverId),
-			shared.Field{Key: "sessionId", Value: s.id},
-			shared.Field{Key: "serverId", Value: s.serverId},
-		)
 		return
 	}
 

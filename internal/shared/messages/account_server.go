@@ -177,3 +177,47 @@ func ReadMsgS2CAnsDeletePlayer(packet []byte) (*MsgS2CAnsDeletePlayer, error) {
 
 	return &msg, nil
 }
+
+type MsgS2MCharacterLogin struct {
+	MsgHeadMs
+	Account       [0x15]byte
+	Password      [0x15]byte
+	CharacterName [0x15]byte
+	ClientIp      [0x10]byte
+	Unknown       [0x4E]byte
+}
+
+func (msg *MsgS2MCharacterLogin) GetSize() uint32 {
+	return uint32(binary.Size(msg))
+}
+
+func (msg *MsgS2MCharacterLogin) SetSize() {
+	msg.Size = uint16(msg.GetSize())
+}
+
+func (msg *MsgS2MCharacterLogin) GetBytes() []byte {
+	var buffer bytes.Buffer
+	_ = binary.Write(&buffer, binary.LittleEndian, msg)
+	return buffer.Bytes()
+}
+
+func NewMsgS2MCharacterLogin(pcId uint32, account string, password string, characterName string, clientIp string, gateServerId byte) *MsgS2MCharacterLogin {
+	msgS2MCharLogin := MsgS2MCharacterLogin{
+		MsgHeadMs: MsgHeadMs{Protocol: protocol.S2MCharacterLogin, GateServerId: gateServerId, PcId: pcId},
+	}
+	copy(msgS2MCharLogin.Account[:], utils.MakeFixedLengthStringBytes(account, 0x15))
+	copy(msgS2MCharLogin.Password[:], utils.MakeFixedLengthStringBytes(password, 0x15))
+	copy(msgS2MCharLogin.CharacterName[:], utils.MakeFixedLengthStringBytes(characterName, 0x15))
+	copy(msgS2MCharLogin.ClientIp[:], utils.MakeFixedLengthStringBytes(clientIp, 0x10))
+	msgS2MCharLogin.SetSize()
+	return &msgS2MCharLogin
+}
+
+func ReadMsgS2MCharacterLogin(packet []byte) (*MsgS2MCharacterLogin, error) {
+	var msg MsgS2MCharacterLogin
+	if err := binary.Read(bytes.NewReader(packet), binary.LittleEndian, &msg); err != nil {
+		return nil, err
+	}
+
+	return &msg, nil
+}
