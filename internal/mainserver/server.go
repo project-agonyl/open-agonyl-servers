@@ -11,10 +11,11 @@ import (
 
 type Server struct {
 	network.TCPServer
-	cfg       *config.EnvVars
-	dbService db.DBService
-	players   *Players
-	mapZones  *shared.SafeMap[uint16, *Zone]
+	cfg          *config.EnvVars
+	dbService    db.DBService
+	players      *Players
+	mapZones     *shared.SafeMap[uint16, *Zone]
+	zoneSessions *shared.SafeMap[byte, *Zone]
 }
 
 func NewServer(cfg *config.EnvVars, db db.DBService, logger shared.Logger, players *Players) *Server {
@@ -26,10 +27,11 @@ func NewServer(cfg *config.EnvVars, db db.DBService, logger shared.Logger, playe
 			Logger:       logger,
 			Sessions:     shared.NewSafeMap[uint32, network.TCPServerSession](),
 		},
-		cfg:       cfg,
-		dbService: db,
-		players:   players,
-		mapZones:  shared.NewSafeMap[uint16, *Zone](),
+		cfg:          cfg,
+		dbService:    db,
+		players:      players,
+		mapZones:     shared.NewSafeMap[uint16, *Zone](),
+		zoneSessions: shared.NewSafeMap[byte, *Zone](),
 	}
 	server.NewSession = func(id uint32, conn net.Conn) network.TCPServerSession {
 		session := newMainServerSession(id, conn)
@@ -41,4 +43,8 @@ func NewServer(cfg *config.EnvVars, db db.DBService, logger shared.Logger, playe
 	}
 
 	return server
+}
+
+func (s *Server) IsZoneRegistered(zoneId byte) bool {
+	return s.zoneSessions.Has(zoneId)
 }

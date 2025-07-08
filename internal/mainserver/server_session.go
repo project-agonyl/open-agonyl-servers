@@ -168,21 +168,29 @@ func (s *mainServerSession) processPacket(packet []byte) {
 			mapId,
 			zone.serverId,
 			msg.GateServerId,
+			zone,
 		)
 		s.server.players.Add(player)
 		loginMsg := messages.NewMsgM2SAnsCharacterLogin(msg.PcId, msg.GateServerId, mapId, 0)
 		_ = s.Send(loginMsg.GetBytes())
 	case protocol.S2MMapList:
-		// 0 to 9 - header
-		// 10 to 11 - map count
-		// rest - uint16 map ids
 		mapCount := binary.LittleEndian.Uint16(packet[10:])
 		mapIds := make([]uint16, mapCount)
 		for i := 0; i < int(mapCount); i++ {
 			mapIds[i] = binary.LittleEndian.Uint16(packet[12+i*2:])
 		}
 
-		// TODO: save mapZones
+		if s.server.IsZoneRegistered(s.serverId) {
+			return
+		}
+
+		zone := NewZone(s.serverId, s)
+		zone.SetMaps(mapIds)
+		s.server.zoneSessions.Set(s.serverId, zone)
+		for _, mapId := range mapIds {
+			s.server.mapZones.Set(mapId, zone)
+		}
+
 	default:
 		s.server.Logger.Info("Unhandled packet",
 			shared.Field{Key: "packet", Value: packet},

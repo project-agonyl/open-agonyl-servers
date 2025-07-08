@@ -15,6 +15,7 @@ type Player struct {
 	state           PlayerState
 	currentServerId byte
 	gateServerId    byte
+	zone            *Zone
 }
 
 func NewPlayer(
@@ -25,6 +26,7 @@ func NewPlayer(
 	currentMapId uint16,
 	serverId byte,
 	gateServerId byte,
+	zone *Zone,
 ) *Player {
 	return &Player{
 		pcId:            pcId,
@@ -35,5 +37,6 @@ func NewPlayer(
 		state:           PlayerStateLogin,
 		currentServerId: serverId,
 		gateServerId:    gateServerId,
+		zone:            zone,
 	}
 }
