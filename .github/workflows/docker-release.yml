@@ -76,34 +76,34 @@ jobs:
 
       - name: Make Docker image public
         run: |
-          # Make the package public using GitHub API
           PACKAGE_NAME="${{ matrix.service.name }}"
-          
-          # Get the package version ID for the current tag
-          PACKAGE_VERSION_ID=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+          TAG="${{ github.ref_name }}"
+          ORG="${{ github.repository_owner }}"
+
+          echo "Fetching package version ID for $PACKAGE_NAME:$TAG from $ORG"
+          VERSION_API="https://api.github.com/orgs/${ORG}/packages/container/${PACKAGE_NAME}/versions"
+          VERSION_ID=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
             -H "Accept: application/vnd.github.v3+json" \
-            "https://api.github.com/user/packages/container/${PACKAGE_NAME}/versions" | \
-            jq -r '.[] | select(.metadata.container.tags[] | contains("${{ github.ref_name }}")) | .id' | head -1)
-          
-          if [ "$PACKAGE_VERSION_ID" != "null" ] && [ "$PACKAGE_VERSION_ID" != "" ]; then
-            # Make the specific version public
-            curl -X PATCH \
+            "$VERSION_API" | \
+            jq -r ".[] | select(.metadata.container.tags[]? == \"$TAG\") | .id" | head -1)
+
+          if [ -n "$VERSION_ID" ]; then
+            echo "Making version $VERSION_ID public..."
+            curl -s -X PATCH \
               -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
               -H "Accept: application/vnd.github.v3+json" \
               -d '{"visibility":"public"}' \
-              "https://api.github.com/user/packages/container/${PACKAGE_NAME}/versions/${PACKAGE_VERSION_ID}"
-            
-            echo "Made $PACKAGE_NAME:${{ github.ref_name }} public"
+              "https://api.github.com/orgs/${ORG}/packages/container/${PACKAGE_NAME}/versions/${VERSION_ID}"
           else
-            echo "Could not find package version ID for $PACKAGE_NAME:${{ github.ref_name }}"
+            echo "Could not find matching version for tag: $TAG"
           fi
-          
-          # Also make the entire package public (affects all versions)
-          curl -X PATCH \
+
+          echo "Making package $PACKAGE_NAME public (all versions)"
+          curl -s -X PATCH \
             -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
             -H "Accept: application/vnd.github.v3+json" \
             -d '{"visibility":"public"}' \
-            "https://api.github.com/user/packages/container/${PACKAGE_NAME}" || echo "Package may already be public or not found"
+            "https://api.github.com/orgs/${ORG}/packages/container/${PACKAGE_NAME}" || echo "Could not make package public (maybe already public)"
 
   comment-on-release:
     needs: build-and-push
@@ -112,27 +112,30 @@ jobs:
       contents: read
       issues: write
       pull-requests: write
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Update Release Description
+      - name: Attach Docker Info to Release
         uses: actions/github-script@v7
         with:
           script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const tag = context.ref.replace('refs/tags/', '');
+
             const comment = `## 🐳 Docker Images Built Successfully!
 
             The following Docker images have been built and pushed to the GitHub Container Registry:
 
             ### Pull Commands
             \`\`\`bash
-            # Pull images for this release
-            docker pull ghcr.io/${{ github.repository }}/main-server:${{ github.ref_name }}
-            docker pull ghcr.io/${{ github.repository }}/login-server:${{ github.ref_name }}
-            docker pull ghcr.io/${{ github.repository }}/account-server:${{ github.ref_name }}
-            docker pull ghcr.io/${{ github.repository }}/gate-server:${{ github.ref_name }}
-            docker pull ghcr.io/${{ github.repository }}/migrate:${{ github.ref_name }}
+            docker pull ghcr.io/${owner}/main-server:${tag}
+            docker pull ghcr.io/${owner}/login-server:${tag}
+            docker pull ghcr.io/${owner}/account-server:${tag}
+            docker pull ghcr.io/${owner}/gate-server:${tag}
+            docker pull ghcr.io/${owner}/migrate:${tag}
             \`\`\`
 
             ### Docker Compose Example
@@ -140,85 +143,71 @@ jobs:
             version: '3.8'
             services:
               main-server:
-                image: ghcr.io/${{ github.repository }}/main-server:${{ github.ref_name }}
+                image: ghcr.io/${owner}/main-server:${tag}
                 ports:
                   - "5555:5555"
               
               login-server:
-                image: ghcr.io/${{ github.repository }}/login-server:${{ github.ref_name }}
+                image: ghcr.io/${owner}/login-server:${tag}
                 ports:
                   - "3550:3550"
               
               account-server:
-                image: ghcr.io/${{ github.repository }}/account-server:${{ github.ref_name }}
+                image: ghcr.io/${owner}/account-server:${tag}
                 ports:
                   - "5589:5589"
               
               gate-server:
-                image: ghcr.io/${{ github.repository }}/gate-server:${{ github.ref_name }}
+                image: ghcr.io/${owner}/gate-server:${tag}
                 ports:
                   - "9860:9860"
 
               migrate:
-                image: ghcr.io/${{ github.repository }}/migrate:${{ github.ref_name }}
+                image: ghcr.io/${owner}/migrate:${tag}
                 # Run once to migrate database
             \`\`\`
 
             ### Available Tags
-            - \`${{ github.ref_name }}\` (exact tag)
-            - \`latest\` (if this is the latest release)
+            - \`${tag}\`
             - Platform support: \`linux/amd64\`, \`linux/arm64\`
 
             Built with ❤️ by GitHub Actions`;
 
             try {
-              // Find the release by tag name
-              const { data: release } = await github.rest.repos.getReleaseByTag({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                tag: '${{ github.ref_name }}'
-              });
-              
-              // Get current release body
-              const currentBody = release.body || '';
-              
-              // Check if our comment is already in the body
-              if (currentBody.includes('🐳 Docker Images Built Successfully!')) {
-                console.log('Release already contains Docker images information');
-                return;
-              }
-              
-              // Append our comment to the existing body
-              const newBody = currentBody + '\n\n' + comment;
-              
-              // Update the release
-              await github.rest.repos.updateRelease({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                release_id: release.id,
-                body: newBody
-              });
-              
-              console.log('Release description updated successfully');
-              
-            } catch (error) {
-              console.log('Error updating release:', error.message);
-              
-              // If release doesn't exist, create it
-              if (error.status === 404) {
-                try {
-                  await github.rest.repos.createRelease({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    tag_name: '${{ github.ref_name }}',
-                    name: 'Release ${{ github.ref_name }}',
+              let release;
+              try {
+                release = await github.rest.repos.getReleaseByTag({ owner, repo, tag });
+              } catch (err) {
+                if (err.status === 404) {
+                  release = await github.rest.repos.createRelease({
+                    owner,
+                    repo,
+                    tag_name: tag,
+                    name: `Release ${tag}`,
                     body: comment,
                     draft: false,
                     prerelease: false
                   });
-                  console.log('Release created successfully');
-                } catch (createError) {
-                  console.log('Error creating release:', createError.message);
+                  console.log(`Created release for tag ${tag}`);
+                  return;
+                } else {
+                  throw err;
                 }
               }
-            } 
+
+              const body = release.data.body || '';
+              if (!body.includes('🐳 Docker Images Built Successfully!')) {
+                await github.rest.repos.updateRelease({
+                  owner,
+                  repo,
+                  release_id: release.data.id,
+                  body: `${body}\n\n${comment}`
+                });
+                console.log(`Appended Docker image info to release ${tag}`);
+              } else {
+                console.log('Release already contains Docker info');
+              }
+            } catch (err) {
+              console.error(`Failed to update release: ${err.message}`);
+              core.setFailed(err.message);
+            }
