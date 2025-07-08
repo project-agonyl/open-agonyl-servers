@@ -249,5 +249,6 @@ const C2SReqLeagueClanInfo uint16 = 0xA345
 const C2SLeagueAllow uint16 = 0xA347
 
 const C2SPayInfo uint16 = 0xC000
+const S2MMapList uint16 = 0xC001
 
 const C2SPing uint16 = 0xF001

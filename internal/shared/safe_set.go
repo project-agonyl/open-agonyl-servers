@@ -35,6 +35,11 @@ func (s *SafeSet[T]) Contains(value T) bool {
 	return ok
 }
 
+// Has checks if the set contains an element.
+func (s *SafeSet[T]) Has(value T) bool {
+	return s.Contains(value)
+}
+
 // Size returns the number of elements in the set.
 func (s *SafeSet[T]) Size() int {
 	s.RLock()
@@ -74,12 +79,14 @@ func (s *SafeSet[T]) Union(other *SafeSet[T]) *SafeSet[T] {
 	return result
 }
 
+// Reset resets the set to an empty state.
 func (s *SafeSet[T]) Reset() {
 	s.Lock()
 	defer s.Unlock()
 	s.m = make(map[T]struct{})
 }
 
+// Range iterates over the set and calls the provided function for each element.
 func (s *SafeSet[T]) Range(f func(value T) bool) {
 	s.RLock()
 	defer s.RUnlock()
@@ -88,4 +95,16 @@ func (s *SafeSet[T]) Range(f func(value T) bool) {
 			break
 		}
 	}
+}
+
+// List returns a list of all elements in the set.
+func (s *SafeSet[T]) List() []T {
+	s.RLock()
+	defer s.RUnlock()
+	list := make([]T, 0, len(s.m))
+	for k := range s.m {
+		list = append(list, k)
+	}
+
+	return list
 }

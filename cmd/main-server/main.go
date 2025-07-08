@@ -7,6 +7,7 @@ import (
 
 	"github.com/project-agonyl/open-agonyl-servers/internal/mainserver"
 	"github.com/project-agonyl/open-agonyl-servers/internal/mainserver/config"
+	"github.com/project-agonyl/open-agonyl-servers/internal/mainserver/db"
 	"github.com/project-agonyl/open-agonyl-servers/internal/shared"
 )
 
@@ -17,7 +18,14 @@ func main() {
 		_ = l.Close()
 	}(logger)
 	logger.Info("Starting Main Server service...")
-	server := mainserver.NewServer(cfg, logger)
+	dbService, err := db.NewDbService(cfg.DatabaseURL, logger)
+	if err != nil {
+		logger.Error("Failed to create database service", shared.Field{Key: "error", Value: err})
+		panic(err)
+	}
+
+	players := mainserver.NewPlayers()
+	server := mainserver.NewServer(cfg, dbService, logger, players)
 	go func(s *mainserver.Server) {
 		err := s.Start()
 		if err != nil {
@@ -31,4 +39,5 @@ func main() {
 	<-interruptChan
 	logger.Info("Shutting down Main Server service...")
 	server.Stop()
+	_ = dbService.Close()
 }

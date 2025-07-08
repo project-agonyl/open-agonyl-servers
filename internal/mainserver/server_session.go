@@ -8,7 +8,11 @@ import (
 	"sync"
 
 	"github.com/project-agonyl/open-agonyl-servers/internal/shared"
+	"github.com/project-agonyl/open-agonyl-servers/internal/shared/constants"
+	"github.com/project-agonyl/open-agonyl-servers/internal/shared/messages"
+	"github.com/project-agonyl/open-agonyl-servers/internal/shared/messages/protocol"
 	"github.com/project-agonyl/open-agonyl-servers/internal/shared/network"
+	"github.com/project-agonyl/open-agonyl-servers/internal/utils"
 )
 
 type mainServerSession struct {
@@ -100,14 +104,90 @@ func (s *mainServerSession) Close() error {
 }
 
 func (s *mainServerSession) processPacket(packet []byte) {
-	if len(packet) < 5 {
+	if len(packet) < 9 {
 		return
 	}
 
-	s.server.Logger.Info("Unhandled packet",
-		shared.Field{Key: "packet", Value: packet},
-		shared.Field{Key: "sessionId", Value: s.id},
-		shared.Field{Key: "serverId", Value: s.serverId})
+	proto := binary.LittleEndian.Uint16(packet)
+	switch proto {
+	case protocol.S2MCharacterLogin:
+		msg, err := messages.ReadMsgS2MCharacterLogin(packet)
+		if err != nil {
+			return
+		}
+
+		account := utils.ReadStringFromBytes(msg.Account[:])
+		characterName := utils.ReadStringFromBytes(msg.CharacterName[:])
+		clientIp := utils.ReadStringFromBytes(msg.ClientIp[:])
+		if s.server.players.HasPlayer(msg.PcId) {
+			errMsg := messages.NewMsgM2SError(msg.PcId, constants.ErrorCodeCharacterLoginFailed, "Player already logged in", msg.GateServerId)
+			_ = s.Send(errMsg.GetBytes())
+			s.server.Logger.Info("Player already logged in",
+				shared.Field{Key: "pcId", Value: msg.PcId},
+				shared.Field{Key: "serverId", Value: s.serverId},
+				shared.Field{Key: "gateServerId", Value: msg.GateServerId},
+				shared.Field{Key: "characterName", Value: characterName},
+				shared.Field{Key: "account", Value: account},
+			)
+			return
+		}
+
+		mapId, err := s.server.dbService.GetCharacterMapInfo(msg.PcId, characterName)
+		if err != nil {
+			errMsg := messages.NewMsgM2SError(msg.PcId, constants.ErrorCodeCharacterLoginFailed, "Character not found", msg.GateServerId)
+			_ = s.Send(errMsg.GetBytes())
+			s.server.Logger.Error("Failed to get character map info",
+				shared.Field{Key: "error", Value: err},
+				shared.Field{Key: "serverId", Value: s.serverId},
+				shared.Field{Key: "gateServerId", Value: msg.GateServerId},
+				shared.Field{Key: "characterName", Value: characterName},
+				shared.Field{Key: "account", Value: account},
+			)
+			return
+		}
+
+		zone, exists := s.server.mapZones.Get(mapId)
+		if !exists {
+			errMsg := messages.NewMsgM2SError(msg.PcId, constants.ErrorCodeCharacterLoginFailed, "Character zone not found", msg.GateServerId)
+			_ = s.Send(errMsg.GetBytes())
+			s.server.Logger.Error("Character zone not found",
+				shared.Field{Key: "mapId", Value: mapId},
+				shared.Field{Key: "serverId", Value: s.serverId},
+				shared.Field{Key: "gateServerId", Value: msg.GateServerId},
+				shared.Field{Key: "characterName", Value: characterName},
+				shared.Field{Key: "account", Value: account},
+			)
+			return
+		}
+
+		player := NewPlayer(
+			msg.PcId,
+			account,
+			characterName,
+			clientIp,
+			mapId,
+			zone.serverId,
+			msg.GateServerId,
+		)
+		s.server.players.Add(player)
+		loginMsg := messages.NewMsgM2SAnsCharacterLogin(msg.PcId, msg.GateServerId, mapId, 0)
+		_ = s.Send(loginMsg.GetBytes())
+	case protocol.S2MMapList:
+		// 0 to 9 - header
+		// 10 to 11 - map count
+		// rest - uint16 map ids
+		mapCount := binary.LittleEndian.Uint16(packet[10:])
+		mapIds := make([]uint16, mapCount)
+		for i := 0; i < int(mapCount); i++ {
+			mapIds[i] = binary.LittleEndian.Uint16(packet[12+i*2:])
+		}
+
+		// TODO: save mapZones
+	default:
+		s.server.Logger.Info("Unhandled packet",
+			shared.Field{Key: "packet", Value: packet},
+			shared.Field{Key: "serverId", Value: s.serverId})
+	}
 }
 
 func (s *mainServerSession) sender() {

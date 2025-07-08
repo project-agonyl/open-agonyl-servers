@@ -4,16 +4,20 @@ import (
 	"net"
 
 	"github.com/project-agonyl/open-agonyl-servers/internal/mainserver/config"
+	"github.com/project-agonyl/open-agonyl-servers/internal/mainserver/db"
 	"github.com/project-agonyl/open-agonyl-servers/internal/shared"
 	"github.com/project-agonyl/open-agonyl-servers/internal/shared/network"
 )
 
 type Server struct {
 	network.TCPServer
-	cfg *config.EnvVars
+	cfg       *config.EnvVars
+	dbService db.DBService
+	players   *Players
+	mapZones  *shared.SafeMap[uint16, *Zone]
 }
 
-func NewServer(cfg *config.EnvVars, logger shared.Logger) *Server {
+func NewServer(cfg *config.EnvVars, db db.DBService, logger shared.Logger, players *Players) *Server {
 	server := &Server{
 		TCPServer: network.TCPServer{
 			Addr:         cfg.IpAddress + ":" + cfg.Port,
@@ -22,7 +26,10 @@ func NewServer(cfg *config.EnvVars, logger shared.Logger) *Server {
 			Logger:       logger,
 			Sessions:     shared.NewSafeMap[uint32, network.TCPServerSession](),
 		},
-		cfg: cfg,
+		cfg:       cfg,
+		dbService: db,
+		players:   players,
+		mapZones:  shared.NewSafeMap[uint16, *Zone](),
 	}
 	server.NewSession = func(id uint32, conn net.Conn) network.TCPServerSession {
 		session := newMainServerSession(id, conn)
