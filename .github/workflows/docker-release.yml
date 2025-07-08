@@ -74,6 +74,37 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Make Docker image public
+        run: |
+          # Make the package public using GitHub API
+          PACKAGE_NAME="${{ matrix.service.name }}"
+          
+          # Get the package version ID for the current tag
+          PACKAGE_VERSION_ID=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/user/packages/container/${PACKAGE_NAME}/versions" | \
+            jq -r '.[] | select(.metadata.container.tags[] | contains("${{ github.ref_name }}")) | .id' | head -1)
+          
+          if [ "$PACKAGE_VERSION_ID" != "null" ] && [ "$PACKAGE_VERSION_ID" != "" ]; then
+            # Make the specific version public
+            curl -X PATCH \
+              -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Accept: application/vnd.github.v3+json" \
+              -d '{"visibility":"public"}' \
+              "https://api.github.com/user/packages/container/${PACKAGE_NAME}/versions/${PACKAGE_VERSION_ID}"
+            
+            echo "Made $PACKAGE_NAME:${{ github.ref_name }} public"
+          else
+            echo "Could not find package version ID for $PACKAGE_NAME:${{ github.ref_name }}"
+          fi
+          
+          # Also make the entire package public (affects all versions)
+          curl -X PATCH \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            -d '{"visibility":"public"}' \
+            "https://api.github.com/user/packages/container/${PACKAGE_NAME}" || echo "Package may already be public or not found"
+
   comment-on-release:
     needs: build-and-push
     runs-on: ubuntu-latest
