@@ -19,6 +19,8 @@ type SerialNumberGenerator interface {
 	CleanupOldSequences(ctx context.Context, olderThan time.Time) error
 }
 
+const batchSize = 500
+
 type serialNumberGenerator struct {
 	db         *sqlx.DB
 	redis      *redis.Client
@@ -37,7 +39,7 @@ func NewSerialNumberGenerator(db *sqlx.DB, redisClient *redis.Client, serverID s
 		db:         db,
 		redis:      redisClient,
 		serverID:   serverID,
-		batchSize:  500,
+		batchSize:  batchSize,
 		lockKey:    fmt.Sprintf("serial:lock:%s", serverID),
 		counterKey: fmt.Sprintf("serial:counter:%s", serverID),
 		psql:       sq.StatementBuilder.PlaceholderFormat(sq.Dollar),
