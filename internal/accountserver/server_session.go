@@ -2,6 +2,7 @@ package accountserver
 
 import (
 	"bytes"
+	"context"
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
@@ -269,12 +270,36 @@ func (s *accountServerSession) handleCharacterCreate(packet []byte) {
 	exists, err := s.server.dbService.DoesCharacterExist(name)
 	if exists || err != nil {
 		_ = s.sendErrorMsg(msg.PcId, constants.ErrorCodeDuplicateCharacter, constants.DuplicateCharacterMsg)
+		if err != nil {
+			s.server.Logger.Error(
+				"Failed to check if character exists",
+				shared.Field{Key: "error", Value: err},
+				shared.Field{Key: "pcId", Value: msg.PcId},
+			)
+		}
+
 		return
 	}
 
 	count, err := s.server.dbService.GetCharacterCount(msg.PcId)
 	if count >= constants.MaxCharactersPerAccount || err != nil {
 		_ = s.sendErrorMsg(msg.PcId, constants.ErrorCodeChracterNotFound, constants.MaxCharactersPerAccountExceededMsg)
+		s.server.Logger.Error(
+			"Failed to get character count",
+			shared.Field{Key: "error", Value: err},
+			shared.Field{Key: "pcId", Value: msg.PcId},
+		)
+		return
+	}
+
+	serials, err := s.server.serialNumberGenerator.GetNextSerials(context.Background(), 7)
+	if err != nil {
+		_ = s.sendErrorMsg(msg.PcId, constants.ErrorCodeChracterNotFound, constants.LoginFailedMsg)
+		s.server.Logger.Error(
+			"Failed to get next serials",
+			shared.Field{Key: "error", Value: err},
+			shared.Field{Key: "pcId", Value: msg.PcId},
+		)
 		return
 	}
 
@@ -303,13 +328,13 @@ func (s *accountServerSession) handleCharacterCreate(packet []byte) {
 		data.Stats.HPCapacity = 110
 		data.Stats.MPCapacity = 40
 		data.Wear = []db.WearItem{
-			{ItemCode: 1048, ItemOption: 0, ItemUniqueCode: 0},
-			{ItemCode: 3322, ItemOption: 0, ItemUniqueCode: 0},
-			{ItemCode: 3307, ItemOption: 0, ItemUniqueCode: 0},
-			{ItemCode: 3297, ItemOption: 0, ItemUniqueCode: 0},
-			{ItemCode: 3302, ItemOption: 0, ItemUniqueCode: 0},
-			{ItemCode: 3317, ItemOption: 0, ItemUniqueCode: 0},
-			{ItemCode: 3312, ItemOption: 0, ItemUniqueCode: 0},
+			{ItemCode: 1048, ItemOption: 0, ItemUniqueCode: serials[0]},
+			{ItemCode: 3322, ItemOption: 0, ItemUniqueCode: serials[1]},
+			{ItemCode: 3307, ItemOption: 0, ItemUniqueCode: serials[2]},
+			{ItemCode: 3297, ItemOption: 0, ItemUniqueCode: serials[3]},
+			{ItemCode: 3302, ItemOption: 0, ItemUniqueCode: serials[4]},
+			{ItemCode: 3317, ItemOption: 0, ItemUniqueCode: serials[5]},
+			{ItemCode: 3312, ItemOption: 0, ItemUniqueCode: serials[6]},
 		}
 	case 0x02:
 		data.Stats.Strength = 20
@@ -322,12 +347,12 @@ func (s *accountServerSession) handleCharacterCreate(packet []byte) {
 		data.Stats.HPCapacity = 30
 		data.Stats.MPCapacity = 120
 		data.Wear = []db.WearItem{
-			{ItemCode: 2066, ItemOption: 0, ItemUniqueCode: 0},
-			{ItemCode: 3337, ItemOption: 0, ItemUniqueCode: 0},
-			{ItemCode: 3327, ItemOption: 0, ItemUniqueCode: 0},
-			{ItemCode: 3332, ItemOption: 0, ItemUniqueCode: 0},
-			{ItemCode: 3347, ItemOption: 0, ItemUniqueCode: 0},
-			{ItemCode: 3342, ItemOption: 0, ItemUniqueCode: 0},
+			{ItemCode: 2066, ItemOption: 0, ItemUniqueCode: serials[0]},
+			{ItemCode: 3337, ItemOption: 0, ItemUniqueCode: serials[1]},
+			{ItemCode: 3327, ItemOption: 0, ItemUniqueCode: serials[2]},
+			{ItemCode: 3332, ItemOption: 0, ItemUniqueCode: serials[3]},
+			{ItemCode: 3347, ItemOption: 0, ItemUniqueCode: serials[4]},
+			{ItemCode: 3342, ItemOption: 0, ItemUniqueCode: serials[5]},
 		}
 	case 0x03:
 		data.Stats.Strength = 30
@@ -339,12 +364,12 @@ func (s *accountServerSession) handleCharacterCreate(packet []byte) {
 		data.Stats.HPCapacity = 100
 		data.Stats.MPCapacity = 50
 		data.Wear = []db.WearItem{
-			{ItemCode: 1110, ItemOption: 0, ItemUniqueCode: 0},
-			{ItemCode: 3677, ItemOption: 0, ItemUniqueCode: 0},
-			{ItemCode: 3657, ItemOption: 0, ItemUniqueCode: 0},
-			{ItemCode: 3667, ItemOption: 0, ItemUniqueCode: 0},
-			{ItemCode: 3697, ItemOption: 0, ItemUniqueCode: 0},
-			{ItemCode: 3687, ItemOption: 0, ItemUniqueCode: 0},
+			{ItemCode: 1110, ItemOption: 0, ItemUniqueCode: serials[0]},
+			{ItemCode: 3677, ItemOption: 0, ItemUniqueCode: serials[1]},
+			{ItemCode: 3657, ItemOption: 0, ItemUniqueCode: serials[2]},
+			{ItemCode: 3667, ItemOption: 0, ItemUniqueCode: serials[3]},
+			{ItemCode: 3697, ItemOption: 0, ItemUniqueCode: serials[4]},
+			{ItemCode: 3687, ItemOption: 0, ItemUniqueCode: serials[5]},
 		}
 	default:
 		data.Stats.Strength = 30
@@ -356,12 +381,12 @@ func (s *accountServerSession) handleCharacterCreate(packet []byte) {
 		data.Stats.HPCapacity = 120
 		data.Stats.MPCapacity = 30
 		data.Wear = []db.WearItem{
-			{ItemCode: 1024, ItemOption: 0, ItemUniqueCode: 0},
-			{ItemCode: 3282, ItemOption: 0, ItemUniqueCode: 0},
-			{ItemCode: 3272, ItemOption: 0, ItemUniqueCode: 0},
-			{ItemCode: 3277, ItemOption: 0, ItemUniqueCode: 0},
-			{ItemCode: 3292, ItemOption: 0, ItemUniqueCode: 0},
-			{ItemCode: 3287, ItemOption: 0, ItemUniqueCode: 0},
+			{ItemCode: 1024, ItemOption: 0, ItemUniqueCode: serials[0]},
+			{ItemCode: 3282, ItemOption: 0, ItemUniqueCode: serials[1]},
+			{ItemCode: 3272, ItemOption: 0, ItemUniqueCode: serials[2]},
+			{ItemCode: 3277, ItemOption: 0, ItemUniqueCode: serials[3]},
+			{ItemCode: 3292, ItemOption: 0, ItemUniqueCode: serials[4]},
+			{ItemCode: 3287, ItemOption: 0, ItemUniqueCode: serials[5]},
 		}
 	}
 

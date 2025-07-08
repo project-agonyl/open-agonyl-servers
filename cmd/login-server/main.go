@@ -62,5 +62,6 @@ func main() {
 	logger.Info("Shutting down Login Server service...")
 	broker.Stop()
 	server.Stop()
+	_ = cache.Close()
 	_ = db.Close()
 }

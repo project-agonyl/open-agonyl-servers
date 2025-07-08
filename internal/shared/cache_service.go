@@ -54,6 +54,7 @@ type CacheService interface {
 	ScriptLoad(ctx context.Context, script string) *redis.StringCmd
 
 	TxPipelined(ctx context.Context, fn func(redis.Pipeliner) error) ([]redis.Cmder, error)
+	Close() error
 }
 
 func NewRedisCacheService(addr string, password string, tlsEnabled bool) CacheService {

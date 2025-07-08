@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -9,6 +10,7 @@ import (
 	"github.com/project-agonyl/open-agonyl-servers/internal/accountserver/config"
 	"github.com/project-agonyl/open-agonyl-servers/internal/accountserver/db"
 	"github.com/project-agonyl/open-agonyl-servers/internal/shared"
+	"github.com/redis/go-redis/v9"
 )
 
 func main() {
@@ -25,12 +27,23 @@ func main() {
 	}
 
 	players := accountserver.NewPlayers()
-	mainServerClient := accountserver.NewMainServerClient(cfg.ServerId, cfg.MainServerIpAddress+":"+cfg.MainServerPort, logger, players)
+	mainServerClient := accountserver.NewMainServerClient(
+		cfg.ServerId,
+		cfg.MainServerIpAddress+":"+cfg.MainServerPort,
+		logger,
+		players,
+	)
 	go func(c *accountserver.MainServerClient) {
 		c.Start()
 	}(mainServerClient)
 
-	server := accountserver.NewServer(cfg, db, logger, players, mainServerClient)
+	cacheService := shared.NewRedisCacheService(cfg.CacheServerAddr, cfg.CacheServerPassword, cfg.CacheTlsEnabled)
+	serialNumberGenerator := shared.NewSerialNumberGenerator(
+		db.GetDB(),
+		cacheService.(*redis.Client),
+		fmt.Sprintf("account-server-%d", cfg.ServerId),
+	)
+	server := accountserver.NewServer(cfg, db, logger, players, mainServerClient, serialNumberGenerator)
 	go func(s *accountserver.Server) {
 		err := s.Start()
 		if err != nil {
@@ -45,5 +58,6 @@ func main() {
 	logger.Info("Shutting down Account Server service...")
 	server.Stop()
 	mainServerClient.Stop()
+	_ = cacheService.Close()
 	_ = db.Close()
 }

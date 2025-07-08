@@ -20,6 +20,7 @@ type DBService interface {
 	GetCharacterCount(accountID uint32) (int, error)
 	CreateCharacter(accountID uint32, name string, class byte, characterData []byte) (uint32, error)
 	DeleteCharacter(accountID uint32, name string) error
+	GetDB() *sqlx.DB
 	Close() error
 }
 
@@ -38,6 +39,10 @@ func NewDbService(dbUrl string, logger shared.Logger) (DBService, error) {
 		db:     db,
 		logger: logger,
 	}, nil
+}
+
+func (s *dbService) GetDB() *sqlx.DB {
+	return s.db
 }
 
 func (s *dbService) Close() error {

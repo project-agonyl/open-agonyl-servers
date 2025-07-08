@@ -30,7 +30,6 @@ CREATE INDEX idx_characters_account_id ON characters(account_id);
 CREATE INDEX idx_characters_name ON characters(name);
 CREATE INDEX idx_characters_status ON characters(status);
 CREATE INDEX idx_characters_is_online ON characters(is_online);
-CREATE INDEX idx_characters_is_last_used ON characters(is_last_used);
 CREATE INDEX idx_characters_level ON characters(level);
 CREATE INDEX idx_characters_class ON characters(class);
 CREATE INDEX idx_characters_experience_points ON characters(experience_points);
@@ -41,7 +40,6 @@ CREATE INDEX idx_characters_created_at ON characters(created_at);
 CREATE INDEX idx_characters_updated_at ON characters(updated_at);
 
 CREATE INDEX idx_characters_account_status ON characters(account_id, status);
-CREATE INDEX idx_characters_account_last_used ON characters(account_id, is_last_used);
 CREATE INDEX idx_characters_online_status ON characters(is_online, status);
 CREATE INDEX idx_characters_level_class ON characters(level, class);
 CREATE INDEX idx_characters_exp_level ON characters(experience_points, level);

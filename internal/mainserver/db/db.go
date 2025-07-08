@@ -7,6 +7,7 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 	"github.com/project-agonyl/open-agonyl-servers/internal/shared"
 	"github.com/project-agonyl/open-agonyl-servers/internal/shared/constants"
 )

@@ -13,14 +13,22 @@ import (
 
 type Server struct {
 	network.TCPServer
-	dbService        db.DBService
-	cfg              *config.EnvVars
-	items            map[uint32]data.Item
-	players          *Players
-	mainServerClient *MainServerClient
+	dbService             db.DBService
+	cfg                   *config.EnvVars
+	items                 map[uint32]data.Item
+	players               *Players
+	mainServerClient      *MainServerClient
+	serialNumberGenerator shared.SerialNumberGenerator
 }
 
-func NewServer(cfg *config.EnvVars, db db.DBService, logger shared.Logger, players *Players, mainServerClient *MainServerClient) *Server {
+func NewServer(
+	cfg *config.EnvVars,
+	db db.DBService,
+	logger shared.Logger,
+	players *Players,
+	mainServerClient *MainServerClient,
+	serialNumberGenerator shared.SerialNumberGenerator,
+) *Server {
 	server := &Server{
 		TCPServer: network.TCPServer{
 			Addr:         cfg.IpAddress + ":" + cfg.Port,
@@ -29,11 +37,12 @@ func NewServer(cfg *config.EnvVars, db db.DBService, logger shared.Logger, playe
 			Logger:       logger,
 			Sessions:     shared.NewSafeMap[uint32, network.TCPServerSession](),
 		},
-		dbService:        db,
-		cfg:              cfg,
-		items:            make(map[uint32]data.Item),
-		players:          players,
-		mainServerClient: mainServerClient,
+		dbService:             db,
+		cfg:                   cfg,
+		items:                 make(map[uint32]data.Item),
+		players:               players,
+		mainServerClient:      mainServerClient,
+		serialNumberGenerator: serialNumberGenerator,
 	}
 	server.NewSession = func(id uint32, conn net.Conn) network.TCPServerSession {
 		session := newAccountServerSession(id, conn)
