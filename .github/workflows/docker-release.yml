@@ -74,42 +74,53 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  create-release:
+  comment-on-release:
     needs: build-and-push
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
+      issues: write
+      pull-requests: write
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Create GitHub Release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Get Release ID
+        id: get_release
+        run: |
+          RELEASE_ID=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/tags/${{ github.ref_name }}" | \
+            jq -r '.id')
+          echo "release_id=$RELEASE_ID" >> $GITHUB_OUTPUT
+
+      - name: Comment on Release
+        uses: actions/github-script@v7
         with:
-          tag_name: ${{ github.ref_name }}
-          release_name: Release ${{ github.ref_name }}
-          body: |
-            ## Docker Images
+          script: |
+            const releaseId = '${{ steps.get_release.outputs.release_id }}';
             
+            if (releaseId === 'null' || releaseId === '') {
+              console.log('No release found for this tag');
+              return;
+            }
+
+            const comment = `## 🐳 Docker Images Built Successfully!
+
             The following Docker images have been built and pushed to the GitHub Container Registry:
-            
-            ```bash
+
+            ### Pull Commands
+            \`\`\`bash
             # Pull images for this release
             docker pull ghcr.io/${{ github.repository }}/main-server:${{ github.ref_name }}
             docker pull ghcr.io/${{ github.repository }}/login-server:${{ github.ref_name }}
             docker pull ghcr.io/${{ github.repository }}/account-server:${{ github.ref_name }}
             docker pull ghcr.io/${{ github.repository }}/gate-server:${{ github.ref_name }}
             docker pull ghcr.io/${{ github.repository }}/migrate:${{ github.ref_name }}
-            ```
-            
-            ## Usage
-            
-            To use these images, you can reference them in your docker-compose.yml or run them directly:
-            
-            ```yaml
+            \`\`\`
+
+            ### Docker Compose Example
+            \`\`\`yaml
             version: '3.8'
             services:
               main-server:
@@ -120,17 +131,47 @@ jobs:
               login-server:
                 image: ghcr.io/${{ github.repository }}/login-server:${{ github.ref_name }}
                 ports:
-                  - "6666:6666"
+                  - "3550:3550"
               
               account-server:
                 image: ghcr.io/${{ github.repository }}/account-server:${{ github.ref_name }}
                 ports:
-                  - "7777:7777"
+                  - "5589:5589"
               
               gate-server:
                 image: ghcr.io/${{ github.repository }}/gate-server:${{ github.ref_name }}
                 ports:
-                  - "8888:8888"
-            ```
-          draft: false
-          prerelease: false 
+                  - "9860:9860"
+
+              migrate:
+                image: ghcr.io/${{ github.repository }}/migrate:${{ github.ref_name }}
+                # Run once to migrate database
+            \`\`\`
+
+            ### Available Tags
+            - \`${{ github.ref_name }}\` (exact tag)
+            - \`latest\` (if this is the latest release)
+            - Platform support: \`linux/amd64\`, \`linux/arm64\`
+
+            Built with ❤️ by GitHub Actions`;
+
+            // Find the release and add a comment
+            const { data: releases } = await github.rest.repos.listReleases({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100
+            });
+
+            const release = releases.find(r => r.tag_name === '${{ github.ref_name }}');
+            
+            if (release) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: release.id,
+                body: comment
+              });
+              console.log('Comment added to release successfully');
+            } else {
+              console.log('Release not found');
+            } 
