@@ -37,7 +37,7 @@ func NewSerialNumberGenerator(db *sqlx.DB, redisClient *redis.Client, serverID s
 		db:         db,
 		redis:      redisClient,
 		serverID:   serverID,
-		batchSize:  1000,
+		batchSize:  500,
 		lockKey:    fmt.Sprintf("serial:lock:%s", serverID),
 		counterKey: fmt.Sprintf("serial:counter:%s", serverID),
 		psql:       sq.StatementBuilder.PlaceholderFormat(sq.Dollar),
