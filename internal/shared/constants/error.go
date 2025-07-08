@@ -4,7 +4,7 @@ const ErrorCodeDuplicateCharacter uint16 = 0x1104
 
 const ErrorCodeCharacterInvalid uint16 = 0x1106
 
-const ErrorCodeCharacterLoginFailed uint16 = 0x1107
+const ErrorCodeGenericFailure uint16 = 0x1107
 
 const ErrorCodeChracterNotFound uint16 = 0x1202
 

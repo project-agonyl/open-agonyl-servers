@@ -16,6 +16,8 @@ const CharacterNotFoundMsg = "Character not found."
 
 const InvalidCharacterMsg = "Invalid character."
 
+const ThereWasAnIssueLoggingInMsg = "There was an issue logging in."
+
 const (
 	AccountStatusActive              = "active"
 	AccountStatusInactive            = "inactive"

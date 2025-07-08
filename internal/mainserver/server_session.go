@@ -120,7 +120,7 @@ func (s *mainServerSession) processPacket(packet []byte) {
 		characterName := utils.ReadStringFromBytes(msg.CharacterName[:])
 		clientIp := utils.ReadStringFromBytes(msg.ClientIp[:])
 		if s.server.players.HasPlayer(msg.PcId) {
-			errMsg := messages.NewMsgM2SError(msg.PcId, constants.ErrorCodeCharacterLoginFailed, "Player already logged in", msg.GateServerId)
+			errMsg := messages.NewMsgM2SError(msg.PcId, constants.ErrorCodeGenericFailure, constants.AccountAlreadyLoggedInMsg, msg.GateServerId)
 			_ = s.Send(errMsg.GetBytes())
 			s.server.Logger.Info("Player already logged in",
 				shared.Field{Key: "pcId", Value: msg.PcId},
@@ -134,7 +134,7 @@ func (s *mainServerSession) processPacket(packet []byte) {
 
 		mapId, err := s.server.dbService.GetCharacterMapInfo(msg.PcId, characterName)
 		if err != nil {
-			errMsg := messages.NewMsgM2SError(msg.PcId, constants.ErrorCodeCharacterLoginFailed, "Character not found", msg.GateServerId)
+			errMsg := messages.NewMsgM2SError(msg.PcId, constants.ErrorCodeGenericFailure, constants.CharacterNotFoundMsg, msg.GateServerId)
 			_ = s.Send(errMsg.GetBytes())
 			s.server.Logger.Error("Failed to get character map info",
 				shared.Field{Key: "error", Value: err},
@@ -148,7 +148,7 @@ func (s *mainServerSession) processPacket(packet []byte) {
 
 		zone, exists := s.server.mapZones.Get(mapId)
 		if !exists {
-			errMsg := messages.NewMsgM2SError(msg.PcId, constants.ErrorCodeCharacterLoginFailed, "Character zone not found", msg.GateServerId)
+			errMsg := messages.NewMsgM2SError(msg.PcId, constants.ErrorCodeGenericFailure, constants.ThereWasAnIssueLoggingInMsg, msg.GateServerId)
 			_ = s.Send(errMsg.GetBytes())
 			s.server.Logger.Error("Character zone not found",
 				shared.Field{Key: "mapId", Value: mapId},
