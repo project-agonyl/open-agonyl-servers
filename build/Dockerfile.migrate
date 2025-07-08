@@ -9,7 +9,7 @@ RUN go mod download
 
 COPY . .
 
-RUN go build -o migrate-app ./migrate/main.go
+RUN go build -o migrate-app ./cmd/migrate
 
 # Minimal final image
 FROM alpine:3.19
