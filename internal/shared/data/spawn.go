@@ -2,7 +2,9 @@ package data
 
 import (
 	"encoding/binary"
+	"fmt"
 	"os"
+	"strings"
 )
 
 type MonsterSpawnData struct {
@@ -15,6 +17,10 @@ type MonsterSpawnData struct {
 }
 
 func LoadMonsterSpawnData(spawnFilePath string) ([]MonsterSpawnData, error) {
+	if !strings.HasSuffix(spawnFilePath, ".n_ndt") {
+		return nil, fmt.Errorf("invalid spawn file path: %s", spawnFilePath)
+	}
+
 	spawnFile, err := os.Open(spawnFilePath)
 	if err != nil {
 		return nil, err
