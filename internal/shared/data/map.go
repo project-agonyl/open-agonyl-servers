@@ -78,15 +78,15 @@ func LoadMapData(mapFilePath string) (*MapData, error) {
 		}
 	}
 
-	for y := 0; y < 0xFF; y++ {
-		for x := 0; x < 0xFF; x++ {
+	for x := 0; x < 0xFF; x++ {
+		for y := 0; y < 0xFF; y++ {
 			var navDataRaw NavigationDataRaw
 			err = binary.Read(mapFile, binary.LittleEndian, &navDataRaw)
 			if err != nil {
 				return nil, err
 			}
 
-			mapData.NavigationMesh[y][x] = NavigationData{
+			mapData.NavigationMesh[x][y] = NavigationData{
 				IsMovable: navDataRaw.IsMovable != 0,
 			}
 		}
