@@ -1,0 +1,5 @@
+{{define "login-error"}}
+<div class="error-message" style="display: block;">
+    <strong>Error!</strong> {{if .Message}}{{.Message}}{{else}}Invalid username or password. Please try again.{{end}}
+</div>
+{{end}} 

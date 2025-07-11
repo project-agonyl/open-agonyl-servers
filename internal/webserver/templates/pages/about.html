@@ -1,0 +1,73 @@
+{{define "about"}}
+{{template "base" .}}
+
+{{define "title"}}About - {{.ServerName}}{{end}}
+
+{{define "content"}}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card">
+            <div class="card-body">
+                <h1 class="display-5 mb-4">About {{.ServerName}}</h1>
+                
+                <p class="lead">{{.ServerName}} is an enhanced version of the classic MMORPG Agonyl, built with modern infrastructure and improved gameplay mechanics.</p>
+                
+                <h3 class="mt-5 mb-3">Features</h3>
+                <div class="row">
+                    <div class="col-md-6">
+                        <ul class="list-unstyled">
+                            <li>✅ Enhanced server performance</li>
+                            <li>✅ Improved game balance</li>
+                            <li>✅ Modern web interface</li>
+                            <li>✅ Real-time server monitoring</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <ul class="list-unstyled">
+                            <li>✅ Active community support</li>
+                            <li>✅ Regular updates</li>
+                            <li>✅ Anti-cheat protection</li>
+                            <li>✅ Cross-platform compatibility</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <h3 class="mt-5 mb-3">Technology Stack</h3>
+                <p>Our server is built using cutting-edge technologies:</p>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">Go</h5>
+                                <p class="card-text">High-performance backend services</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">PostgreSQL</h5>
+                                <p class="card-text">Reliable database management</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">Redis</h5>
+                                <p class="card-text">Fast caching and session management</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-5">
+                    <a href="/" class="btn btn-primary">Back to Home</a>
+                    <a href="/contact" class="btn btn-outline-primary">Contact Us</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{{end}}
+{{end}} 

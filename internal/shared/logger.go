@@ -24,6 +24,7 @@ type Logger interface {
 	Warn(msg string, fields ...Field)
 	Error(msg string, fields ...Field)
 	With(fields ...Field) Logger
+	GetLoggerInstance() interface{}
 	Close() error
 }
 
@@ -81,6 +82,10 @@ func (z *zerologLogger) With(fields ...Field) Logger {
 		fileWriter:     z.fileWriter,
 		ownsFileWriter: false,
 	}
+}
+
+func (z *zerologLogger) GetLoggerInstance() interface{} {
+	return z.logger
 }
 
 func toMap(fields []Field) map[string]any {

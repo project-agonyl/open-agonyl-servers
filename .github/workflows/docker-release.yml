@@ -35,7 +35,9 @@ jobs:
           - name: migrate
             dockerfile: build/Dockerfile.migrate
             context: .
-
+          - name: web-server
+            dockerfile: build/Dockerfile.web-server
+            context: .
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -137,6 +139,7 @@ jobs:
             docker pull ghcr.io/${owner}/account-server:${tag}
             docker pull ghcr.io/${owner}/gate-server:${tag}
             docker pull ghcr.io/${owner}/migrate:${tag}
+            docker pull ghcr.io/${owner}/web-server:${tag}
             \`\`\`
 
             ### Docker Compose Example
@@ -166,6 +169,11 @@ jobs:
               migrate:
                 image: ghcr.io/${owner}/migrate:${tag}
                 # Run once to migrate database
+
+              web-server:
+                image: ghcr.io/${owner}/web-server:${tag}
+                ports:
+                  - "80:80"
             \`\`\`
 
             ### Available Tags

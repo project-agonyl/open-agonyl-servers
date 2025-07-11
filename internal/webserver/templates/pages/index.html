@@ -1,0 +1,50 @@
+{{define "index"}}
+{{template "base" .}}
+
+{{define "title"}}Home - {{.ServerName}}{{end}}
+
+{{define "content"}}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card">
+            <div class="card-body text-center">
+                <h1 class="display-4 mb-4">Welcome to {{.ServerName}}</h1>
+                <p class="lead">Experience the ultimate MMORPG adventure with our enhanced Agonyl server.</p>
+                
+                <div class="row mt-5">
+                    <div class="col-md-4">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">🎮 Enhanced Gameplay</h5>
+                                <p class="card-text">Experience improved game mechanics and balanced gameplay.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">🚀 High Performance</h5>
+                                <p class="card-text">Optimized server infrastructure for smooth gaming experience.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">🌟 Active Community</h5>
+                                <p class="card-text">Join thousands of players in epic adventures and battles.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-5">
+                    <a href="/login" class="btn btn-primary btn-lg me-3">Player Login</a>
+                    <a href="/about" class="btn btn-outline-primary btn-lg">Learn More</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{{end}}
+{{end}} 

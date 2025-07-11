@@ -1,0 +1,265 @@
+{{define "characters"}}
+{{template "base" .}}
+
+{{define "title"}}Characters - {{.ServerName}}{{end}}
+
+{{define "content"}}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="display-6">My Characters</h1>
+            <a href="/logout" class="btn btn-outline-danger">Logout</a>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">DragonSlayer</h5>
+                        <span class="badge bg-success">Online</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <strong>Level:</strong> 85
+                            </div>
+                            <div class="col-6">
+                                <strong>Class:</strong> Warrior
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <strong>HP:</strong> 2,450
+                            </div>
+                            <div class="col-6">
+                                <strong>MP:</strong> 850
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <strong>STR:</strong> 120
+                            </div>
+                            <div class="col-6">
+                                <strong>DEX:</strong> 85
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <strong>INT:</strong> 45
+                            </div>
+                            <div class="col-6">
+                                <strong>SPI:</strong> 60
+                            </div>
+                        </div>
+                        <div class="progress mb-3">
+                            <div class="progress-bar" role="progressbar" style="width: 75%">
+                                75% to next level
+                            </div>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary btn-sm">Select Character</button>
+                            <button class="btn btn-outline-info btn-sm">View Details</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">MageKnight</h5>
+                        <span class="badge bg-secondary">Offline</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <strong>Level:</strong> 72
+                            </div>
+                            <div class="col-6">
+                                <strong>Class:</strong> Mage
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <strong>HP:</strong> 1,820
+                            </div>
+                            <div class="col-6">
+                                <strong>MP:</strong> 2,150
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <strong>STR:</strong> 65
+                            </div>
+                            <div class="col-6">
+                                <strong>DEX:</strong> 70
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <strong>INT:</strong> 145
+                            </div>
+                            <div class="col-6">
+                                <strong>SPI:</strong> 120
+                            </div>
+                        </div>
+                        <div class="progress mb-3">
+                            <div class="progress-bar" role="progressbar" style="width: 32%">
+                                32% to next level
+                            </div>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary btn-sm">Select Character</button>
+                            <button class="btn btn-outline-info btn-sm">View Details</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">ShadowRogue</h5>
+                        <span class="badge bg-secondary">Offline</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <strong>Level:</strong> 68
+                            </div>
+                            <div class="col-6">
+                                <strong>Class:</strong> Archer
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <strong>HP:</strong> 1,950
+                            </div>
+                            <div class="col-6">
+                                <strong>MP:</strong> 1,200
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <strong>STR:</strong> 85
+                            </div>
+                            <div class="col-6">
+                                <strong>DEX:</strong> 135
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <strong>INT:</strong> 75
+                            </div>
+                            <div class="col-6">
+                                <strong>SPI:</strong> 80
+                            </div>
+                        </div>
+                        <div class="progress mb-3">
+                            <div class="progress-bar" role="progressbar" style="width: 88%">
+                                88% to next level
+                            </div>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary btn-sm">Select Character</button>
+                            <button class="btn btn-outline-info btn-sm">View Details</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Account Statistics</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="text-center">
+                                    <h4 class="text-primary">3</h4>
+                                    <small class="text-muted">Total Characters</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-center">
+                                    <h4 class="text-success">85</h4>
+                                    <small class="text-muted">Highest Level</small>
+                                </div>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="text-center">
+                                    <h4 class="text-info">247h</h4>
+                                    <small class="text-muted">Total Playtime</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-center">
+                                    <h4 class="text-warning">1,250</h4>
+                                    <small class="text-muted">Total Kills</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Recent Activity</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="list-group list-group-flush">
+                            <div class="list-group-item">
+                                <small class="text-muted">2 hours ago</small><br>
+                                <strong>DragonSlayer</strong> gained level 85
+                            </div>
+                            <div class="list-group-item">
+                                <small class="text-muted">1 day ago</small><br>
+                                <strong>MageKnight</strong> completed quest "Ancient Ruins"
+                            </div>
+                            <div class="list-group-item">
+                                <small class="text-muted">3 days ago</small><br>
+                                <strong>ShadowRogue</strong> acquired rare item "Shadow Bow"
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Quick Actions</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <button class="btn btn-success w-100">Create New Character</button>
+                            </div>
+                            <div class="col-md-3">
+                                <button class="btn btn-info w-100">Change Password</button>
+                            </div>
+                            <div class="col-md-3">
+                                <button class="btn btn-warning w-100">Account Settings</button>
+                            </div>
+                            <div class="col-md-3">
+                                <button class="btn btn-secondary w-100">Download Game</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{{end}}
+{{end}} 

@@ -206,6 +206,28 @@ services:
     volumes:
       - ./logs:/app/logs
 
+  # 9. Web Server
+  web-server:
+    build:
+      context: ..
+      dockerfile: build/Dockerfile.web-server
+    container_name: agonyl-web-server
+    restart: unless-stopped
+    environment:
+      PORT: 80
+      ENVIRONMENT: production
+      LOG_LEVEL: info
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/agonyl?sslmode=disable
+    ports:
+      - "80:80"
+    networks:
+      - agonyl-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./logs:/app/logs
+
 networks:
   agonyl-network:
     driver: bridge
