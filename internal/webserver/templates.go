@@ -57,6 +57,7 @@ func (t *Templates) Render(w io.Writer, name string, data interface{}, c echo.Co
 		if err != nil {
 			return err
 		}
+
 		return tmpl.ExecuteTemplate(w, name+".html", data)
 	}
 
@@ -64,6 +65,7 @@ func (t *Templates) Render(w io.Writer, name string, data interface{}, c echo.Co
 	if err != nil {
 		return err
 	}
+
 	return baseTemplate.ExecuteTemplate(w, "base", data)
 }
 
