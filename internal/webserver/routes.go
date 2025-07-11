@@ -8,6 +8,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/project-agonyl/open-agonyl-servers/internal/shared"
+	"github.com/project-agonyl/open-agonyl-servers/internal/webserver/mw"
 	"github.com/rs/zerolog"
 	"github.com/ziflex/lecho/v3"
 )
@@ -17,9 +18,9 @@ func (s *Server) RegisterRoutes() http.Handler {
 	e.Logger = lecho.From(s.logger.GetLoggerInstance().(zerolog.Logger))
 	e.Pre(middleware.RemoveTrailingSlash())
 	e.Use(middleware.RequestID())
-	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 	e.Use(middleware.CSRF())
+	e.Use(mw.Logger(s.logger))
 
 	e.Renderer = NewTemplates()
 
@@ -36,7 +37,6 @@ func (s *Server) RegisterRoutes() http.Handler {
 	e.GET("/login", s.handleLoginPage)
 	e.POST("/login", s.handleLogin)
 	e.GET("/logout", s.handleLogout)
-
 	e.GET("/characters", s.handleCharacters)
 
 	return e
