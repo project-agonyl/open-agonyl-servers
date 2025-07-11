@@ -58,7 +58,7 @@ func (t *Templates) Render(w io.Writer, name string, data interface{}, c echo.Co
 			return err
 		}
 
-		return tmpl.ExecuteTemplate(w, name+".html", data)
+		return tmpl.ExecuteTemplate(w, name, data)
 	}
 
 	baseTemplate, err := template.ParseFS(templateFS, "templates/base.html", "templates/partials/*.html")

@@ -142,6 +142,14 @@
 
 {{define "scripts"}}
 <script>
+    htmx.config.responseHandling = [
+        {code: "200", swap: true},
+        {code: "400", swap: true},
+        {code: "401", swap: true},
+        {code: "403", swap: true},
+        {code: "[45].*", swap: false, error: false}
+    ];
+    
     document.body.addEventListener('htmx:afterRequest', function(event) {
         if (event.detail.pathInfo.requestPath === '/login') {
             const xhr = event.detail.xhr;
@@ -153,10 +161,8 @@
                         window.location.href = '/characters';
                     }, 1500);
                 }
-            } else if (xhr.status === 403) {
-                setTimeout(() => {
-                    window.location.reload();
-                }, 2000);
+            } else if (xhr.status === 400 || xhr.status === 401 || xhr.status === 403) {
+                target.innerHTML = xhr.responseText;
             }
         }
     });

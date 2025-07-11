@@ -19,8 +19,14 @@ func (s *Server) RegisterRoutes() http.Handler {
 	e.Pre(middleware.RemoveTrailingSlash())
 	e.Use(middleware.RequestID())
 	e.Use(middleware.Recover())
-	e.Use(middleware.CSRF())
 	e.Use(mw.Logger(s.logger))
+	csrfConfig := middleware.CSRFConfig{
+		TokenLookup: "form:_csrf",
+		ErrorHandler: func(err error, c echo.Context) error {
+			return s.renderTemplate(c, "csrf-error", s.getBaseTemplateData(), http.StatusForbidden)
+		},
+	}
+	e.Use(middleware.CSRFWithConfig(csrfConfig))
 
 	e.Renderer = NewTemplates()
 

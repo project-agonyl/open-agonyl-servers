@@ -27,7 +27,9 @@ func (s *Server) handleLogin(c echo.Context) error {
 		return s.renderTemplate(c, "login-success", s.getBaseTemplateData(), http.StatusOK)
 	}
 
-	return s.renderTemplate(c, "login-error", s.getBaseTemplateData(), http.StatusUnauthorized)
+	return s.renderTemplate(c, "login-error", map[string]interface{}{
+		"Message": "Invalid username or password. Please try again.",
+	}, http.StatusUnauthorized)
 }
 
 func (s *Server) handleLogout(c echo.Context) error {
