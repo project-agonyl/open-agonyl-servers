@@ -14,7 +14,7 @@ import (
 
 func main() {
 	cfg := config.New()
-	logger := shared.NewZerologFileLogger("account-server", "logs", cfg.GetZerologLevel())
+	logger := shared.NewZerologFileLogger("web-server", "logs", cfg.GetZerologLevel())
 	defer func(l shared.Logger) {
 		_ = l.Close()
 	}(logger)
@@ -27,10 +27,17 @@ func main() {
 	}
 
 	server := webserver.NewServer(cfg, db, logger)
+	go func() {
+		if err := server.Start(); err != nil {
+			logger.Error("Server failed to start", shared.Field{Key: "error", Value: err})
+			os.Exit(1)
+		}
+	}()
+
 	interruptChan := make(chan os.Signal, 1)
 	signal.Notify(interruptChan, os.Interrupt, syscall.SIGTERM)
 	<-interruptChan
 	logger.Info("Shutting down Web Server service...")
-	_ = server.Shutdown(context.Background())
+	_ = server.Stop(context.Background())
 	_ = db.Close()
 }

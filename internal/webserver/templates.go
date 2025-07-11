@@ -4,8 +4,7 @@ import (
 	"embed"
 	"html/template"
 	"io"
-	"io/fs"
-	"path/filepath"
+	"strings"
 
 	"github.com/labstack/echo/v4"
 )
@@ -17,47 +16,55 @@ var templateFS embed.FS
 var staticFS embed.FS
 
 type Templates struct {
-	templates *template.Template
+	templates map[string]*template.Template
 }
 
 func NewTemplates() *Templates {
-	tmpl := template.New("")
-
-	err := parseTemplatesFromFS(tmpl, templateFS, "templates")
+	baseTemplate, err := template.ParseFS(templateFS, "templates/base.html", "templates/partials/*.html")
 	if err != nil {
 		panic(err)
 	}
 
+	templates := make(map[string]*template.Template)
+
+	pages := []string{"index", "about", "login", "characters"}
+	for _, page := range pages {
+		pageTmpl, err := baseTemplate.Clone()
+		if err != nil {
+			panic(err)
+		}
+
+		_, err = pageTmpl.ParseFS(templateFS, "templates/pages/"+page+".html")
+		if err != nil {
+			panic(err)
+		}
+
+		templates[page] = pageTmpl
+	}
+
 	return &Templates{
-		templates: tmpl,
+		templates: templates,
 	}
 }
 
-func parseTemplatesFromFS(tmpl *template.Template, fsys embed.FS, dir string) error {
-	return fs.WalkDir(fsys, dir, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-
-		if d.IsDir() || filepath.Ext(path) != ".html" {
-			return nil
-		}
-
-		content, err := fsys.ReadFile(path)
-		if err != nil {
-			return err
-		}
-
-		name := filepath.Base(path)
-		name = name[:len(name)-len(filepath.Ext(name))]
-
-		_, err = tmpl.New(name).Parse(string(content))
-		return err
-	})
-}
-
 func (t *Templates) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
-	return t.templates.ExecuteTemplate(w, name, data)
+	if template, exists := t.templates[name]; exists {
+		return template.ExecuteTemplate(w, "base", data)
+	}
+
+	if strings.HasPrefix(name, "login-") || strings.HasPrefix(name, "csrf-") {
+		tmpl, err := template.ParseFS(templateFS, "templates/partials/"+name+".html")
+		if err != nil {
+			return err
+		}
+		return tmpl.ExecuteTemplate(w, name+".html", data)
+	}
+
+	baseTemplate, err := template.ParseFS(templateFS, "templates/base.html", "templates/partials/*.html")
+	if err != nil {
+		return err
+	}
+	return baseTemplate.ExecuteTemplate(w, "base", data)
 }
 
 func GetStaticFS() embed.FS {
