@@ -31,6 +31,6 @@ func main() {
 	signal.Notify(interruptChan, os.Interrupt, syscall.SIGTERM)
 	<-interruptChan
 	logger.Info("Shutting down Web Server service...")
-	server.Shutdown(context.Background())
+	_ = server.Shutdown(context.Background())
 	_ = db.Close()
 }
