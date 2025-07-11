@@ -1,0 +1,215 @@
+version: '3.8'
+
+services:
+  # 1. Valkey (Redis-compatible)
+  valkey:
+    image: valkey/valkey:7.2-alpine
+    container_name: agonyl-valkey
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - valkey_data:/data
+    networks:
+      - agonyl-network
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # 2. PostgreSQL
+  postgres:
+    image: postgres:16-alpine
+    container_name: agonyl-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: agonyl
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - agonyl-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d agonyl"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # 3. Adminer (Database management)
+  adminer:
+    image: adminer:4.8.1
+    container_name: agonyl-adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    networks:
+      - agonyl-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # 4. Migrate
+  migrate:
+    build:
+      context: ..
+      dockerfile: build/Dockerfile.migrate
+    container_name: agonyl-migrate
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/agonyl?sslmode=disable
+      ENVIRONMENT: production
+      LOG_LEVEL: info
+    networks:
+      - agonyl-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  # 5. Main Server
+  main-server:
+    build:
+      context: ..
+      dockerfile: build/Dockerfile.main-server
+    container_name: agonyl-main-server
+    restart: unless-stopped
+    environment:
+      PORT: 5555
+      IP_ADDRESS: 0.0.0.0
+      ENVIRONMENT: production
+      LOG_LEVEL: info
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/agonyl?sslmode=disable
+      CACHE_SERVER_ADDR: valkey:6379
+      CACHE_SERVER_PASSWORD: ""
+      CACHE_TLS_ENABLED: "false"
+      CACHE_KEY_PREFIX: "agonyl:main-server:"
+    ports:
+      - "5555:5555"
+    networks:
+      - agonyl-network
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      valkey:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./logs:/app/logs
+
+  # 6. Account Server
+  account-server:
+    build:
+      context: ..
+      dockerfile: build/Dockerfile.account-server
+    container_name: agonyl-account-server
+    restart: unless-stopped
+    environment:
+      PORT: 5589
+      IP_ADDRESS: 0.0.0.0
+      ENVIRONMENT: production
+      LOG_LEVEL: info
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/agonyl?sslmode=disable
+      CACHE_SERVER_ADDR: valkey:6379
+      CACHE_SERVER_PASSWORD: ""
+      CACHE_TLS_ENABLED: "false"
+      CACHE_KEY_PREFIX: "agonyl:account-server:"
+      ZONE_DATA_ITEM_PATH: "ZoneData/Item"
+      MAIN_SERVER_IP_ADDRESS: main-server
+      MAIN_SERVER_PORT: 5555
+      SERVER_ID: 255
+    ports:
+      - "5589:5589"
+    networks:
+      - agonyl-network
+    depends_on:
+      main-server:
+        condition: service_started
+    volumes:
+      - ./logs:/app/logs
+
+  # 7. Login Server
+  login-server:
+    build:
+      context: ..
+      dockerfile: build/Dockerfile.login-server
+    container_name: agonyl-login-server
+    restart: unless-stopped
+    environment:
+      PORT: 3550
+      ENVIRONMENT: production
+      LOG_LEVEL: info
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/agonyl?sslmode=disable
+      CACHE_SERVER_ADDR: valkey:6379
+      CACHE_SERVER_PASSWORD: ""
+      CACHE_TLS_ENABLED: "false"
+      CACHE_KEY_PREFIX: "agonyl:login-server:"
+      IS_TEST_MODE: "false"
+      BROKER_PORT: 3210
+      AUTO_CREATE_ACCOUNT: "false"
+    ports:
+      - "3550:3550"
+      - "3210:3210"
+    networks:
+      - agonyl-network
+    depends_on:
+      account-server:
+        condition: service_started
+    volumes:
+      - ./logs:/app/logs
+
+  # 8. Gate Server
+  gate-server:
+    build:
+      context: ..
+      dockerfile: build/Dockerfile.gate-server
+    container_name: agonyl-gate-server
+    restart: unless-stopped
+    environment:
+      PORT: 9860
+      IP_ADDRESS: 0.0.0.0
+      SERVER_ID: 0
+      ENVIRONMENT: production
+      LOG_LEVEL: info
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/agonyl?sslmode=disable
+      CACHE_SERVER_ADDR: valkey:6379
+      CACHE_SERVER_PASSWORD: ""
+      CACHE_TLS_ENABLED: "false"
+      CACHE_KEY_PREFIX: "agonyl:gate-server:"
+      IS_TEST_MODE: "false"
+      LOGIN_SERVER_IP_ADDRESS: login-server
+      LOGIN_SERVER_PORT: 3210
+      DYNAMIC_KEY: "0x04C478BD"
+      SERVER_NAME: "Agonyl"
+      ZONE_SERVER_COUNT: 3
+      ZONE_SERVER_IP_1: account-server
+      ZONE_SERVER_PORT_1: 5589
+      ZONE_SERVER_ID_1: 255
+      ZONE_SERVER_IP_2: 127.0.0.1
+      ZONE_SERVER_PORT_2: 7568
+      ZONE_SERVER_ID_2: 0
+      ZONE_SERVER_IP_3: 127.0.0.1
+      ZONE_SERVER_PORT_3: 6699
+      ZONE_SERVER_ID_3: 3
+    ports:
+      - "9860:9860"
+    networks:
+      - agonyl-network
+    depends_on:
+      login-server:
+        condition: service_started
+    volumes:
+      - ./logs:/app/logs
+
+networks:
+  agonyl-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  valkey_data: 
