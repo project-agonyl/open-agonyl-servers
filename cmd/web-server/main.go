@@ -10,6 +10,7 @@ import (
 	"github.com/project-agonyl/open-agonyl-servers/internal/webserver"
 	"github.com/project-agonyl/open-agonyl-servers/internal/webserver/config"
 	"github.com/project-agonyl/open-agonyl-servers/internal/webserver/db"
+	"github.com/project-agonyl/open-agonyl-servers/internal/webserver/session"
 )
 
 func main() {
@@ -26,7 +27,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	server := webserver.NewServer(cfg, db, logger)
+	sessionStorage := session.NewDBSessionStorage(db)
+	server := webserver.NewServer(cfg, db, sessionStorage, logger)
 	go func() {
 		if err := server.Start(); err != nil {
 			logger.Error("Server failed to start", shared.Field{Key: "error", Value: err})

@@ -7,7 +7,7 @@ import (
 )
 
 func (s *Server) handleCharacters(c echo.Context) error {
-	data := s.getBaseTemplateData()
+	data := s.getBaseTemplateDataWithAuth(c)
 	data["Title"] = "Characters - " + s.cfg.ServerName
 	return c.Render(http.StatusOK, "characters", data)
 }

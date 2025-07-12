@@ -23,7 +23,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	csrfConfig := middleware.CSRFConfig{
 		TokenLookup: "form:_csrf",
 		ErrorHandler: func(err error, c echo.Context) error {
-			return s.renderTemplate(c, "csrf-error", s.getBaseTemplateData(), http.StatusForbidden)
+			return s.renderTemplate(c, "csrf-error", s.getBaseTemplateDataWithAuth(c), http.StatusForbidden)
 		},
 	}
 	e.Use(middleware.CSRFWithConfig(csrfConfig))
@@ -38,12 +38,14 @@ func (s *Server) RegisterRoutes() http.Handler {
 		e.StaticFS("/static", assetsSubFS)
 	}
 
+	e.Use(mw.AuthContextMiddleware(s.cfg, s.sessionStorage, s.logger))
+
 	e.GET("/", s.handleIndex)
 	e.GET("/about", s.handleAbout)
 	e.GET("/login", s.handleLoginPage)
 	e.POST("/login", s.handleLogin)
-	e.GET("/logout", s.handleLogout)
-	e.GET("/characters", s.handleCharacters)
+	e.GET("/logout", s.handleLogout, mw.AuthGuardMiddleware(s.cfg, s.sessionStorage, s.logger))
+	e.GET("/characters", s.handleCharacters, mw.AuthGuardMiddleware(s.cfg, s.sessionStorage, s.logger))
 
 	return e
 }
@@ -54,9 +56,23 @@ func (s *Server) getBaseTemplateData() map[string]interface{} {
 	}
 }
 
-func (s *Server) getBaseTemplateDataWithCSRF(c echo.Context) map[string]interface{} {
+func (s *Server) getBaseTemplateDataWithAuth(c echo.Context) map[string]interface{} {
 	data := s.getBaseTemplateData()
+
 	data["CSRFToken"] = c.Get(middleware.DefaultCSRFConfig.ContextKey)
+
+	if mw.IsAuthenticated(c) {
+		username, err := mw.GetUsername(c)
+		if err == nil {
+			data["IsAuthenticated"] = true
+			data["Username"] = username
+		} else {
+			data["IsAuthenticated"] = false
+		}
+	} else {
+		data["IsAuthenticated"] = false
+	}
+
 	return data
 }
 

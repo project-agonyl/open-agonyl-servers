@@ -9,20 +9,23 @@ import (
 	"github.com/project-agonyl/open-agonyl-servers/internal/shared"
 	"github.com/project-agonyl/open-agonyl-servers/internal/webserver/config"
 	"github.com/project-agonyl/open-agonyl-servers/internal/webserver/db"
+	"github.com/project-agonyl/open-agonyl-servers/internal/webserver/session"
 )
 
 type Server struct {
-	cfg        *config.EnvVars
-	db         db.DBService
-	logger     shared.Logger
-	httpServer *http.Server
+	cfg            *config.EnvVars
+	db             db.DBService
+	sessionStorage session.SessionStorage
+	logger         shared.Logger
+	httpServer     *http.Server
 }
 
-func NewServer(cfg *config.EnvVars, db db.DBService, logger shared.Logger) *Server {
+func NewServer(cfg *config.EnvVars, db db.DBService, sessionStorage session.SessionStorage, logger shared.Logger) *Server {
 	server := &Server{
-		cfg:    cfg,
-		db:     db,
-		logger: logger,
+		cfg:            cfg,
+		db:             db,
+		sessionStorage: sessionStorage,
+		logger:         logger,
 	}
 
 	server.httpServer = &http.Server{
