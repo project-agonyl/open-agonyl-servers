@@ -174,5 +174,6 @@ func (s *Server) handleRegister(c echo.Context) error {
 	if isVerification {
 		msg = "Account created! Please check your email to verify your account."
 	}
+
 	return s.renderTemplate(c, "register-success", map[string]interface{}{"Message": msg}, http.StatusOK)
 }
