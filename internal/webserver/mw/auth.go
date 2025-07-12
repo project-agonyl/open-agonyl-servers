@@ -22,6 +22,10 @@ const (
 func AuthGuardMiddleware(cfg *config.EnvVars, sessionStorage session.SessionStorage, logger shared.Logger) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
+			if IsAuthenticated(c) {
+				return next(c)
+			}
+
 			accessToken, err := helpers.ReadCookie(c, cfg.SessionCookieName)
 			if err != nil {
 				logger.Debug("No session cookie found", shared.Field{Key: "error", Value: err})
