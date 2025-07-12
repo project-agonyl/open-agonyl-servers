@@ -14,13 +14,14 @@ The stack includes the following services in startup order:
 6. **Account Server** - Character and account management
 7. **Login Server** - Authentication service
 8. **Gate Server** - Game client gateway
+9. **Web Server** - Web interface and account management
 
 ## Prerequisites
 
 - Docker Engine 20.10+
 - Docker Compose 2.0+
 - At least 4GB RAM available
-- Ports 3210, 3550, 5432, 5555, 5589, 6379, 8080, 9860 available
+- Ports 80, 3210, 3550, 5432, 5555, 5589, 6379, 8080, 9860 available
 
 ## Quick Start
 
@@ -56,12 +57,42 @@ The stack includes the following services in startup order:
   - Password: `postgres`
   - Database: `agonyl`
 
+- **Web Interface:** http://localhost:80
+  - Account registration and login
+  - Character management
+  - Server information and status
+
 - **Game Server Endpoints:**
   - Main Server: `localhost:5555`
   - Account Server: `localhost:5589`
   - Login Server: `localhost:3550`
   - Gate Server: `localhost:9860`
   - Login Broker: `localhost:3210`
+
+## Web Server Features
+
+The web server provides a modern web interface for:
+
+- **Account Management:**
+  - User registration and login
+  - Password reset functionality
+  - Account verification (configurable)
+
+- **Character Management:**
+  - View character details
+  - Character statistics and equipment
+  - Character listing and selection
+
+- **Server Information:**
+  - Server status and statistics
+  - Game world information
+  - Community features
+
+- **Security Features:**
+  - JWT-based authentication
+  - Session management
+  - CSRF protection
+  - Secure cookie handling
 
 ## Configuration
 
@@ -73,6 +104,9 @@ Each service uses environment variables for configuration. Key variables include
 - `CACHE_SERVER_ADDR`: Valkey/Redis server address
 - `LOG_LEVEL`: Logging level (trace, debug, info, warn, error)
 - `ENVIRONMENT`: Runtime environment (production, development)
+- `PORT`: Service port (defaults vary by service)
+- `JWT_SECRET`: Web server JWT signing secret
+- `SESSION_COOKIE_NAME`: Web server session cookie name
 
 ### Volumes
 
@@ -190,4 +224,6 @@ Valkey → PostgreSQL → Adminer
             Login Server
                    ↓
              Gate Server
+                   ↓
+            Web Server
 ``` 
