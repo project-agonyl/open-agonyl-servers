@@ -9,18 +9,19 @@ import (
 )
 
 type EnvVars struct {
-	Port                string
-	Environment         string
-	LogLevel            string
-	DatabaseURL         string
-	CacheServerAddr     string
-	CacheServerPassword string
-	CacheTlsEnabled     bool
-	CacheKeyPrefix      string
-	ServerName          string
-	JwtSecret           string
-	JwtExpiry           int
-	SessionCookieName   string
+	Port                          string
+	Environment                   string
+	LogLevel                      string
+	DatabaseURL                   string
+	CacheServerAddr               string
+	CacheServerPassword           string
+	CacheTlsEnabled               bool
+	CacheKeyPrefix                string
+	ServerName                    string
+	JwtSecret                     string
+	JwtExpiry                     int
+	SessionCookieName             string
+	IsAccountVerificationRequired bool
 }
 
 func New() *EnvVars {
@@ -118,19 +119,32 @@ func New() *EnvVars {
 		}
 	}
 
+	if _, ok := os.LookupEnv("IS_ACCOUNT_VERIFICATION_REQUIRED"); !ok {
+		err := os.Setenv("IS_ACCOUNT_VERIFICATION_REQUIRED", "false")
+		if err != nil {
+			slog.Info("Could not set default IS_ACCOUNT_VERIFICATION_REQUIRED!")
+		}
+	}
+
+	isAccountVerificationRequired, err := strconv.ParseBool(os.Getenv("IS_ACCOUNT_VERIFICATION_REQUIRED"))
+	if err != nil {
+		isAccountVerificationRequired = false
+	}
+
 	return &EnvVars{
-		Port:                os.Getenv("PORT"),
-		Environment:         os.Getenv("ENVIRONMENT"),
-		LogLevel:            os.Getenv("LOG_LEVEL"),
-		DatabaseURL:         os.Getenv("DATABASE_URL"),
-		CacheServerAddr:     os.Getenv("CACHE_SERVER_ADDR"),
-		CacheServerPassword: os.Getenv("CACHE_SERVER_PASSWORD"),
-		CacheTlsEnabled:     cacheTlsEnabled,
-		CacheKeyPrefix:      os.Getenv("CACHE_KEY_PREFIX"),
-		ServerName:          os.Getenv("SERVER_NAME"),
-		JwtSecret:           os.Getenv("JWT_SECRET"),
-		JwtExpiry:           jwtExpiry,
-		SessionCookieName:   os.Getenv("SESSION_COOKIE_NAME"),
+		Port:                          os.Getenv("PORT"),
+		Environment:                   os.Getenv("ENVIRONMENT"),
+		LogLevel:                      os.Getenv("LOG_LEVEL"),
+		DatabaseURL:                   os.Getenv("DATABASE_URL"),
+		CacheServerAddr:               os.Getenv("CACHE_SERVER_ADDR"),
+		CacheServerPassword:           os.Getenv("CACHE_SERVER_PASSWORD"),
+		CacheTlsEnabled:               cacheTlsEnabled,
+		CacheKeyPrefix:                os.Getenv("CACHE_KEY_PREFIX"),
+		ServerName:                    os.Getenv("SERVER_NAME"),
+		JwtSecret:                     os.Getenv("JWT_SECRET"),
+		JwtExpiry:                     jwtExpiry,
+		SessionCookieName:             os.Getenv("SESSION_COOKIE_NAME"),
+		IsAccountVerificationRequired: isAccountVerificationRequired,
 	}
 }
 

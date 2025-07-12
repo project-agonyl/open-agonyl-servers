@@ -9,15 +9,20 @@ import (
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"github.com/project-agonyl/open-agonyl-servers/internal/shared"
+	"github.com/project-agonyl/open-agonyl-servers/internal/shared/constants"
+	"github.com/project-agonyl/open-agonyl-servers/internal/utils"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type DBService interface {
 	GetAccountByUsername(username string) (*Account, error)
+	GetAccountByEmail(email string) (*Account, error)
 	GetSessionBySessionID(sessionID string, isActiveOnly bool) (*Session, error)
 	GetSessionsByAccountID(accountID uint32, isActiveOnly bool) ([]Session, error)
 	GetSessionsByUsername(username string, isActiveOnly bool) ([]Session, error)
 	CreateSession(accountID uint32, userAgent string, ipAddress string, expiresAt time.Time) (string, error)
 	RevokeSession(sessionID string) error
+	CreateAccount(username string, password string, email string, isEmailVerificationRequired bool) (uint32, error)
 	Close() error
 }
 
@@ -68,6 +73,32 @@ func (s *dbService) GetAccountByUsername(username string) (*Account, error) {
 	return account, nil
 }
 
+func (s *dbService) GetAccountByEmail(email string) (*Account, error) {
+	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+	qb := psql.Select("id", "account_id", "username", "password_hash", "status", "is_online").
+		From("accounts").
+		Where(sq.Eq{"email": email})
+
+	query, args, err := qb.ToSql()
+	if err != nil {
+		s.logger.Error("Failed to build get account by email query", shared.Field{Key: "error", Value: err})
+		return nil, err
+	}
+
+	account := &Account{}
+	err = s.db.Get(account, query, args...)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, err
+		}
+
+		s.logger.Error("Failed to execute get account by email query", shared.Field{Key: "error", Value: err})
+		return nil, err
+	}
+
+	return account, nil
+}
+
 type Account struct {
 	ID           uint32 `db:"id"`
 	AccountID    string `db:"account_id"`
@@ -93,7 +124,18 @@ type Session struct {
 
 func (s *dbService) GetSessionBySessionID(sessionID string, isActiveOnly bool) (*Session, error) {
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
-	qb := psql.Select("id", "session_id", "account_id", "user_agent", "ip_address", "issued_at", "expires_at", "revoked_at", "metadata", "created_at", "updated_at").
+	qb := psql.Select(
+		"id",
+		"session_id",
+		"account_id",
+		"user_agent",
+		"ip_address",
+		"issued_at",
+		"expires_at",
+		"revoked_at",
+		"metadata",
+		"created_at",
+		"updated_at").
 		From("web_sessions").
 		Where(sq.Eq{"session_id": sessionID})
 
@@ -126,7 +168,15 @@ func (s *dbService) GetSessionBySessionID(sessionID string, isActiveOnly bool) (
 
 func (s *dbService) GetSessionsByAccountID(accountID uint32, isActiveOnly bool) ([]Session, error) {
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
-	qb := psql.Select("id", "session_id", "account_id", "user_agent", "ip_address", "issued_at", "expires_at", "revoked_at", "metadata", "created_at", "updated_at").
+	qb := psql.Select(
+		"id",
+		"session_id",
+		"account_id",
+		"user_agent",
+		"ip_address",
+		"issued_at",
+		"expires_at",
+		"revoked_at", "metadata", "created_at", "updated_at").
 		From("web_sessions").
 		Where(sq.Eq{"account_id": accountID}).
 		OrderBy("issued_at DESC")
@@ -156,7 +206,19 @@ func (s *dbService) GetSessionsByAccountID(accountID uint32, isActiveOnly bool) 
 
 func (s *dbService) GetSessionsByUsername(username string, isActiveOnly bool) ([]Session, error) {
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
-	qb := psql.Select("ws.id", "ws.session_id", "ws.account_id", "ws.user_agent", "ws.ip_address", "ws.issued_at", "ws.expires_at", "ws.revoked_at", "ws.metadata", "ws.created_at", "ws.updated_at").
+	qb := psql.Select(
+		"ws.id",
+		"ws.session_id",
+		"ws.account_id",
+		"ws.user_agent",
+		"ws.ip_address",
+		"ws.issued_at",
+		"ws.expires_at",
+		"ws.revoked_at",
+		"ws.metadata",
+		"ws.created_at",
+		"ws.updated_at",
+		"a.username").
 		From("web_sessions ws").
 		Join("accounts a ON ws.account_id = a.id").
 		Where(sq.Eq{"a.username": username}).
@@ -237,4 +299,39 @@ func (s *dbService) RevokeSession(sessionID string) error {
 	}
 
 	return nil
+}
+
+func (s *dbService) CreateAccount(username string, password string, email string, isEmailVerificationRequired bool) (uint32, error) {
+	passwordHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		s.logger.Error("Failed to hash password", shared.Field{Key: "error", Value: err})
+		return 0, err
+	}
+
+	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+	accountStatus := constants.AccountStatusActive
+	if isEmailVerificationRequired {
+		accountStatus = constants.AccountStatusPendingVerification
+	}
+
+	emailVerificationToken := utils.GenerateRandomString(32)
+	qb := psql.Insert("accounts").
+		Columns("username", "password_hash", "status", "email", "email_verification_token").
+		Values(username, string(passwordHash), accountStatus, email, emailVerificationToken).
+		Suffix("RETURNING id")
+
+	query, args, err := qb.ToSql()
+	if err != nil {
+		s.logger.Error("Failed to build create account query", shared.Field{Key: "error", Value: err})
+		return 0, err
+	}
+
+	var accountID uint32
+	err = s.db.QueryRow(query, args...).Scan(&accountID)
+	if err != nil {
+		s.logger.Error("Failed to execute create account query", shared.Field{Key: "error", Value: err})
+		return 0, err
+	}
+
+	return accountID, nil
 }

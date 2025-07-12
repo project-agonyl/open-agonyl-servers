@@ -41,7 +41,12 @@ func (s *Server) RegisterRoutes() http.Handler {
 	e.Use(mw.AuthContextMiddleware(s.cfg, s.sessionStorage, s.logger))
 
 	e.GET("/", s.handleIndex)
+
 	e.GET("/about", s.handleAbout)
+
+	e.GET("/register", s.handleRegisterPage)
+	e.POST("/register", s.handleRegister)
+
 	e.GET("/login", s.handleLoginPage)
 	e.POST("/login", s.handleLogin)
 	e.GET("/logout", s.handleLogout, mw.AuthGuardMiddleware(s.cfg, s.sessionStorage, s.logger))

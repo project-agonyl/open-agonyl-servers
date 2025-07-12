@@ -27,7 +27,7 @@ func NewTemplates() *Templates {
 
 	templates := make(map[string]*template.Template)
 
-	pages := []string{"index", "about", "login", "characters"}
+	pages := []string{"index", "about", "login", "register", "characters"}
 	for _, page := range pages {
 		pageTmpl, err := baseTemplate.Clone()
 		if err != nil {
@@ -52,7 +52,7 @@ func (t *Templates) Render(w io.Writer, name string, data interface{}, c echo.Co
 		return template.ExecuteTemplate(w, "base", data)
 	}
 
-	if strings.HasPrefix(name, "login-") || strings.HasPrefix(name, "csrf-") {
+	if strings.HasPrefix(name, "login-") || strings.HasPrefix(name, "register-") || strings.HasPrefix(name, "csrf-") {
 		tmpl, err := template.ParseFS(templateFS, "templates/partials/"+name+".html")
 		if err != nil {
 			return err

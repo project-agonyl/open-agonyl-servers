@@ -1,0 +1,35 @@
+{{define "register-error"}}
+{{if .Message}}
+<div class="error-message" style="display: block;">
+    <strong>Registration Error!</strong> {{.Message}}
+</div>
+{{end}}
+{{if .FieldErrors}}
+<div id="field-errors" style="display: none;" 
+     data-errors="{{range $field, $error := .FieldErrors}}{{$field}}:{{$error}}|{{end}}">
+</div>
+<script>
+    clearValidationClasses();
+    var errorData = document.getElementById('field-errors').getAttribute('data-errors');
+    if (errorData) {
+        var errors = errorData.split('|');
+        for (var i = 0; i < errors.length; i++) {
+            if (errors[i]) {
+                var parts = errors[i].split(':');
+                var field = parts[0];
+                var error = parts[1];
+                
+                var input = document.getElementById(field);
+                var errorElement = document.getElementById(field + '-error');
+                if (input && errorElement) {
+                    input.classList.add('is-invalid');
+                    input.classList.remove('is-valid');
+                    errorElement.textContent = error;
+                    errorElement.style.display = 'block';
+                }
+            }
+        }
+    }
+</script>
+{{end}}
+{{end}} 
