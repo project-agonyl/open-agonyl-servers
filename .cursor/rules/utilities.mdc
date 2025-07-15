@@ -1,0 +1,9 @@
+---
+description: Util and helper functions
+globs: 
+alwaysApply: false
+---
+# Utility Functions
+
+- Create reusable service independant utility functions in `internal/utils/` directory with relevant file name based on the thing they work on.
+- Place all reusable functions that has logic specific to this project in `internal/shared/helpers` with relevant file name based on the thing they work on.

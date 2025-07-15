@@ -1,0 +1,11 @@
+---
+description: Memory bank
+globs:
+alwaysApply: false
+---
+
+# Memory Bank Usage
+
+- Memory bank is in `memory-bank` directory at the project root.
+- When in doubt about project goals, check memory bank.
+- After finishing a feature try to update relevant parts of memory bank to keep it up to date.
