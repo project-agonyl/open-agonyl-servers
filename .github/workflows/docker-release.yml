@@ -29,6 +29,9 @@ jobs:
           - name: account-server
             dockerfile: build/Dockerfile.account-server
             context: .
+          - name: zone-server
+            dockerfile: build/Dockerfile.zone-server
+            context: .
           - name: gate-server
             dockerfile: build/Dockerfile.gate-server
             context: .
@@ -137,6 +140,7 @@ jobs:
             docker pull ghcr.io/${owner}/main-server:${tag}
             docker pull ghcr.io/${owner}/login-server:${tag}
             docker pull ghcr.io/${owner}/account-server:${tag}
+            docker pull ghcr.io/${owner}/zone-server:${tag}
             docker pull ghcr.io/${owner}/gate-server:${tag}
             docker pull ghcr.io/${owner}/migrate:${tag}
             docker pull ghcr.io/${owner}/web-server:${tag}
@@ -160,6 +164,11 @@ jobs:
                 image: ghcr.io/${owner}/account-server:${tag}
                 ports:
                   - "5589:5589"
+              
+              zone-server:
+                image: ghcr.io/${owner}/zone-server:${tag}
+                ports:
+                  - "7568:7568"
               
               gate-server:
                 image: ghcr.io/${owner}/gate-server:${tag}
