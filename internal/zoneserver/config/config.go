@@ -27,7 +27,7 @@ type EnvVars struct {
 
 func New() *EnvVars {
 	if _, ok := os.LookupEnv("PORT"); !ok {
-		err := os.Setenv("PORT", "5589")
+		err := os.Setenv("PORT", "7568")
 		if err != nil {
 			slog.Info("Could not set default PORT!")
 		}

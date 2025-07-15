@@ -11,17 +11,18 @@ The stack includes the following services in startup order:
 3. **Adminer** - Database management interface
 4. **Migrate** - Database migration service
 5. **Main Server** - Core game server
-6. **Account Server** - Character and account management
-7. **Login Server** - Authentication service
-8. **Gate Server** - Game client gateway
-9. **Web Server** - Web interface and account management
+6. **Zone Server** - Game world and zone management
+7. **Account Server** - Character and account management
+8. **Login Server** - Authentication service
+9. **Gate Server** - Game client gateway
+10. **Web Server** - Web interface and account management
 
 ## Prerequisites
 
 - Docker Engine 20.10+
 - Docker Compose 2.0+
 - At least 4GB RAM available
-- Ports 80, 3210, 3550, 5432, 5555, 5589, 6379, 8080, 9860 available
+- Ports 80, 3210, 3550, 5432, 5555, 5589, 6379, 7568, 8080, 9860 available
 
 ## Quick Start
 
@@ -64,6 +65,7 @@ The stack includes the following services in startup order:
 
 - **Game Server Endpoints:**
   - Main Server: `localhost:5555`
+  - Zone Server: `localhost:7568`
   - Account Server: `localhost:5589`
   - Login Server: `localhost:3550`
   - Gate Server: `localhost:9860`
@@ -218,6 +220,8 @@ Valkey → PostgreSQL → Adminer
                 Migrate
                    ↓
               Main Server
+                   ↓
+              Zone Server
                    ↓
             Account Server
                    ↓
