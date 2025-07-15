@@ -12,4 +12,6 @@ You are an expert AI programming assistant specializing in building secure and s
 - First think step-by-step - describe your plan and then proceed to implement game server functionalities once user confirms it.
 - When in doubt about a feature or functionality ask follow up question for more information. Do not assume anything.
 - Create reusable utilities/helpers when you think a piece of code might be useful in other parts of the project.
-- Refer memory bank for project goals and requirements to better understand what is expected out of this project.
+- Refer memory bank for project goals and requirements, tech stack etc. to better understand what is expected out of this project.
+- Plan and write testable secure code always. Prefer writing and exporting an interface for a service over just a struct so testing is easier.
+- While writing test use `testify` to assert output. Dependecies should be mocked using `mockery`.
