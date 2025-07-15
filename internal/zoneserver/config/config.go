@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"os"
 	"strconv"
+	"strings"
 
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/rs/zerolog"
@@ -23,6 +24,7 @@ type EnvVars struct {
 	MainServerIpAddress string
 	MainServerPort      string
 	ServerId            byte
+	MapIDs              []uint16
 }
 
 func New() *EnvVars {
@@ -116,7 +118,7 @@ func New() *EnvVars {
 	}
 
 	if _, ok := os.LookupEnv("SERVER_ID"); !ok {
-		err := os.Setenv("SERVER_ID", "255")
+		err := os.Setenv("SERVER_ID", "0")
 		if err != nil {
 			slog.Info("Could not set default SERVER_ID!")
 		}
@@ -124,7 +126,25 @@ func New() *EnvVars {
 
 	serverId, err := strconv.ParseUint(os.Getenv("SERVER_ID"), 10, 8)
 	if err != nil {
-		serverId = 255
+		serverId = 0
+	}
+
+	if _, ok := os.LookupEnv("MAP_IDS"); !ok {
+		err := os.Setenv("MAP_IDS", "1,7")
+		if err != nil {
+			slog.Info("Could not set default MAP_IDS!")
+		}
+	}
+
+	mapIds := strings.Split(os.Getenv("MAP_IDS"), ",")
+	mapIdsUint := make([]uint16, 0)
+	for _, mapId := range mapIds {
+		mapIdUint, err := strconv.ParseUint(mapId, 10, 16)
+		if err != nil {
+			slog.Info("Could not parse MAP_IDS!")
+		}
+
+		mapIdsUint = append(mapIdsUint, uint16(mapIdUint))
 	}
 
 	return &EnvVars{
@@ -141,6 +161,7 @@ func New() *EnvVars {
 		MainServerIpAddress: os.Getenv("MAIN_SERVER_IP_ADDRESS"),
 		MainServerPort:      os.Getenv("MAIN_SERVER_PORT"),
 		ServerId:            byte(serverId),
+		MapIDs:              mapIdsUint,
 	}
 }
 
