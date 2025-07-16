@@ -24,15 +24,16 @@ type MainServerClient struct {
 	logger          shared.Logger
 	reconnectDelay  time.Duration
 	isConnected     bool
+	players         *Players
 }
 
-func NewMainServerClient(serverId byte, addr string, logger shared.Logger) *MainServerClient {
+func NewMainServerClient(serverId byte, addr string, logger shared.Logger, players *Players) *MainServerClient {
 	return &MainServerClient{
-		serverId:       serverId,
-		addr:           addr,
-		logger:         logger,
-		reconnectDelay: 10 * time.Second,
-		isConnected:    false,
+		serverId:    serverId,
+		addr:        addr,
+		logger:      logger,
+		players:     players,
+		isConnected: false,
 	}
 }
 
@@ -160,11 +161,16 @@ func (c *MainServerClient) sender() {
 
 func (c *MainServerClient) processPacket(packet []byte) {
 	proto := binary.LittleEndian.Uint16(packet)
-	switch proto {
-	default:
+	pcId := binary.LittleEndian.Uint32(packet[4:])
+	player, exists := c.players.Get(pcId)
+	if !exists {
 		c.logger.Error(
-			"Unhandled packet from main server",
-			shared.Field{Key: "proto", Value: proto},
+			"Could not find player",
+			shared.Field{Key: "pcId", Value: pcId},
+			shared.Field{Key: "protocol", Value: proto},
 		)
+		return
 	}
+
+	player.HandleMainServerPacket(packet)
 }

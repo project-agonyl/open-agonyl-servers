@@ -4,6 +4,7 @@ type PlayerState byte
 
 const (
 	PlayerStateLogin PlayerState = iota
+	PlayerStateWorld PlayerState = 1
 )
 
 type Player struct {

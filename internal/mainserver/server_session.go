@@ -191,6 +191,40 @@ func (s *mainServerSession) processPacket(packet []byte) {
 			s.server.mapZones.Set(mapId, zone)
 		}
 
+	case protocol.S2MWorldLogin:
+		msg, err := messages.ReadMsgS2MWorldLogin(packet)
+		if err != nil {
+			return
+		}
+
+		player, exists := s.server.players.Get(msg.PcId)
+		if !exists {
+			errMsg := messages.NewMsgM2SError(msg.PcId, constants.ErrorCodeGenericFailure, constants.ThereWasAnIssueLoggingInMsg, msg.GateServerId)
+			_ = s.Send(errMsg.GetBytes())
+			return
+		}
+
+		characterName := utils.ReadStringFromBytes(msg.CharacterName[:])
+		if player.state != PlayerStateLogin || player.characterName != characterName {
+			errMsg := messages.NewMsgM2SError(msg.PcId, constants.ErrorCodeGenericFailure, constants.ThereWasAnIssueLoggingInMsg, msg.GateServerId)
+			_ = s.Send(errMsg.GetBytes())
+			return
+		}
+
+		player.state = PlayerStateWorld
+		_ = s.Send(packet)
+	case protocol.S2MCharacterLogout:
+		msg, err := messages.ReadMsgS2MCharacterLogout(packet)
+		if err != nil {
+			return
+		}
+
+		_, exists := s.server.players.Get(msg.PcId)
+		if !exists {
+			return
+		}
+
+		s.server.players.Remove(msg.PcId)
 	default:
 		s.server.Logger.Info("Unhandled packet",
 			shared.Field{Key: "packet", Value: packet},

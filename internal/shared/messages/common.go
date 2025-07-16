@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 
 	"github.com/project-agonyl/open-agonyl-servers/internal/shared/messages/protocol"
+	"github.com/project-agonyl/open-agonyl-servers/internal/utils"
 )
 
 type Msg interface {
@@ -104,6 +105,47 @@ func NewMsgS2GZoneChange(pcId uint32, zoneId byte) MsgS2GZoneChange {
 
 func ReadMsgS2GZoneChange(packet []byte) (*MsgS2GZoneChange, error) {
 	var msg MsgS2GZoneChange
+	if err := binary.Read(bytes.NewReader(packet), binary.LittleEndian, &msg); err != nil {
+		return nil, err
+	}
+
+	return &msg, nil
+}
+
+type MsgS2MCharacterLogout struct {
+	MsgHeadMs
+	CharacterName [0x15]byte
+}
+
+func (msg *MsgS2MCharacterLogout) GetSize() uint32 {
+	return uint32(binary.Size(msg))
+}
+
+func (msg *MsgS2MCharacterLogout) SetSize() {
+	msg.Size = uint16(msg.GetSize())
+}
+
+func (msg *MsgS2MCharacterLogout) GetBytes() []byte {
+	var buffer bytes.Buffer
+	_ = binary.Write(&buffer, binary.LittleEndian, msg)
+	return buffer.Bytes()
+}
+
+func NewMsgS2MCharacterLogout(pcId uint32, characterName string) *MsgS2MCharacterLogout {
+	msg := MsgS2MCharacterLogout{
+		MsgHeadMs: MsgHeadMs{
+			Protocol: protocol.S2MCharacterLogout,
+			PcId:     pcId,
+		},
+	}
+
+	copy(msg.CharacterName[:], utils.MakeFixedLengthStringBytes(characterName, 0x15))
+	msg.SetSize()
+	return &msg
+}
+
+func ReadMsgS2MCharacterLogout(packet []byte) (*MsgS2MCharacterLogout, error) {
+	var msg MsgS2MCharacterLogout
 	if err := binary.Read(bytes.NewReader(packet), binary.LittleEndian, &msg); err != nil {
 		return nil, err
 	}

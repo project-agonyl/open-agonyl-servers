@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"github.com/project-agonyl/open-agonyl-servers/internal/shared"
+	"github.com/project-agonyl/open-agonyl-servers/internal/shared/messages"
 	"github.com/project-agonyl/open-agonyl-servers/internal/shared/network"
 )
 
@@ -95,24 +96,34 @@ func (s *zoneServerSession) Close() error {
 	return nil
 }
 
+func (s *zoneServerSession) SendErrorMsg(pcId uint32, errorCode uint16, errorMsg string) error {
+	msg := messages.NewMsgS2CError(pcId, errorCode, errorMsg)
+	data := msg.GetBytes()
+	return s.Send(data)
+}
+
 func (s *zoneServerSession) processPacket(packet []byte) {
-	if len(packet) < 9 {
+	if len(packet) < 12 {
 		return
 	}
 
 	ctrl := packet[8]
 	cmd := packet[9]
-	var proto uint16
-	if len(packet) > 11 {
-		proto = binary.LittleEndian.Uint16(packet[10:])
+	proto := binary.LittleEndian.Uint16(packet[10:])
+	pcId := binary.LittleEndian.Uint32(packet[4:])
+	player, exists := s.server.players.Get(pcId)
+	if !exists {
+		s.server.Logger.Error(
+			"Could not find player",
+			shared.Field{Key: "ctrl", Value: ctrl},
+			shared.Field{Key: "cmd", Value: cmd},
+			shared.Field{Key: "protocol", Value: proto},
+			shared.Field{Key: "pcId", Value: pcId},
+		)
+		return
 	}
 
-	s.server.Logger.Error(
-		"Unhandled packet",
-		shared.Field{Key: "ctrl", Value: ctrl},
-		shared.Field{Key: "cmd", Value: cmd},
-		shared.Field{Key: "protocolo", Value: proto},
-	)
+	player.HandleGateServerPacket(packet)
 }
 
 func (s *zoneServerSession) sender() {
@@ -131,4 +142,17 @@ func (s *zoneServerSession) sender() {
 			return
 		}
 	}
+}
+
+func (s *zoneServerSession) handleClientDisconnect(packet []byte) {
+	pcId := binary.LittleEndian.Uint32(packet[4:])
+	player, exists := s.server.players.Get(pcId)
+	if !exists {
+		return
+	}
+
+	msg := messages.NewMsgS2MCharacterLogout(pcId, player.characterName)
+	_ = s.server.mainServerClient.Send(msg.GetBytes())
+	s.server.Logger.Info(fmt.Sprintf("Account %d disconnected", pcId))
+	s.server.players.Remove(pcId)
 }

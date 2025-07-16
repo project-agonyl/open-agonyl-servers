@@ -26,10 +26,12 @@ func main() {
 		os.Exit(1)
 	}
 
+	players := zoneserver.NewPlayers()
 	mainServerClient := zoneserver.NewMainServerClient(
 		cfg.ServerId,
 		cfg.MainServerIpAddress+":"+cfg.MainServerPort,
 		logger,
+		players,
 	)
 	go func(c *zoneserver.MainServerClient) {
 		c.Start()
@@ -41,7 +43,7 @@ func main() {
 		cacheService.(*redis.Client),
 		fmt.Sprintf("zone-server-%d", cfg.ServerId),
 	)
-	server := zoneserver.NewServer(cfg, db, logger, mainServerClient, serialNumberGenerator)
+	server := zoneserver.NewServer(cfg, db, logger, mainServerClient, serialNumberGenerator, players)
 	go func(s *zoneserver.Server) {
 		err := s.Start()
 		if err != nil {

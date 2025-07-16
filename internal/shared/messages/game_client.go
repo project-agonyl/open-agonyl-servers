@@ -115,8 +115,8 @@ func NewMsgC2SAskCreatePlayer(pcId uint32, class byte, town byte, name string) *
 		MsgHead: MsgHead{
 			Protocol: protocol.C2SAskCreatePlayer,
 			MsgHeadNoProtocol: MsgHeadNoProtocol{
-				Ctrl: 0x01,
-				Cmd:  0x01,
+				Ctrl: 0x03,
+				Cmd:  0xFF,
 				PcId: pcId,
 			},
 		},
@@ -159,8 +159,8 @@ func NewMsgC2SAskDeletePlayer(pcId uint32, name string) *MsgC2SAskDeletePlayer {
 		MsgHead: MsgHead{
 			Protocol: protocol.C2SAskDeletePlayer,
 			MsgHeadNoProtocol: MsgHeadNoProtocol{
-				Ctrl: 0x01,
-				Cmd:  0x01,
+				Ctrl: 0x03,
+				Cmd:  0xFF,
 				PcId: pcId,
 			},
 		},
@@ -204,8 +204,8 @@ func NewMsgC2SCharacterLogin(pcId uint32, characterName string, clientVersion ui
 		MsgHead: MsgHead{
 			Protocol: protocol.C2SCharacterLogin,
 			MsgHeadNoProtocol: MsgHeadNoProtocol{
-				Ctrl: 0x01,
-				Cmd:  0x01,
+				Ctrl: 0x03,
+				Cmd:  0xFF,
 				PcId: pcId,
 			},
 		},
@@ -218,6 +218,50 @@ func NewMsgC2SCharacterLogin(pcId uint32, characterName string, clientVersion ui
 
 func ReadMsgC2SCharacterLogin(packet []byte) (*MsgC2SCharacterLogin, error) {
 	var msg MsgC2SCharacterLogin
+	if err := binary.Read(bytes.NewReader(packet), binary.LittleEndian, &msg); err != nil {
+		return nil, err
+	}
+
+	return &msg, nil
+}
+
+type MsgC2SWorldLogin struct {
+	MsgHead
+	CharacterName [0x15]byte
+}
+
+func (msg *MsgC2SWorldLogin) GetSize() uint32 {
+	return uint32(binary.Size(msg))
+}
+
+func (msg *MsgC2SWorldLogin) SetSize() {
+	msg.Size = msg.GetSize()
+}
+
+func (msg *MsgC2SWorldLogin) GetBytes() []byte {
+	var buffer bytes.Buffer
+	_ = binary.Write(&buffer, binary.LittleEndian, msg)
+	return buffer.Bytes()
+}
+
+func NewMsgC2SWorldLogin(pcId uint32, characterName string) *MsgC2SWorldLogin {
+	msg := MsgC2SWorldLogin{
+		MsgHead: MsgHead{
+			Protocol: protocol.C2SWorldLogin,
+			MsgHeadNoProtocol: MsgHeadNoProtocol{
+				Ctrl: 0x03,
+				Cmd:  0xFF,
+				PcId: pcId,
+			},
+		},
+	}
+	copy(msg.CharacterName[:], utils.MakeFixedLengthStringBytes(characterName, 0x15))
+	msg.SetSize()
+	return &msg
+}
+
+func ReadMsgC2SWorldLogin(packet []byte) (*MsgC2SWorldLogin, error) {
+	var msg MsgC2SWorldLogin
 	if err := binary.Read(bytes.NewReader(packet), binary.LittleEndian, &msg); err != nil {
 		return nil, err
 	}

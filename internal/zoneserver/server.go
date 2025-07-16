@@ -16,6 +16,7 @@ type Server struct {
 	db                    db.DBService
 	mainServerClient      *MainServerClient
 	serialNumberGenerator shared.SerialNumberGenerator
+	players               *Players
 }
 
 func NewServer(
@@ -24,6 +25,7 @@ func NewServer(
 	logger shared.Logger,
 	mainServerClient *MainServerClient,
 	serialNumberGenerator shared.SerialNumberGenerator,
+	players *Players,
 ) *Server {
 	server := &Server{
 		TCPServer: network.TCPServer{
@@ -36,6 +38,7 @@ func NewServer(
 		db:                    db,
 		mainServerClient:      mainServerClient,
 		serialNumberGenerator: serialNumberGenerator,
+		players:               players,
 	}
 
 	server.NewSession = func(id uint32, conn net.Conn) network.TCPServerSession {

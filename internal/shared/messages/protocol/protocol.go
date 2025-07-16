@@ -243,6 +243,8 @@ const S2CAnsCreatePlayer uint16 = 0xA001
 const C2SAskDeletePlayer uint16 = 0xA002
 const S2CAnsDeletePlayer uint16 = 0xA002
 const S2MCharacterLogin uint16 = 0xA010
+const S2MWorldLogin uint16 = 0xA011
+const S2MCharacterLogout uint16 = 0xA012
 
 const C2SLeague uint16 = 0xA340
 const C2SReqLeagueClanInfo uint16 = 0xA345

@@ -202,14 +202,15 @@ func (s *accountServerSession) handleCharacterListing(packet []byte) {
 }
 
 func (s *accountServerSession) handleClientDisconnect(packet []byte) {
-	if len(packet) < 8 {
-		return
-	}
-
 	pcId := binary.LittleEndian.Uint32(packet[4:])
 	player, exists := s.server.players.Get(pcId)
 	if !exists {
 		return
+	}
+
+	if player.selectedCharacterName != "" {
+		msg := messages.NewMsgS2MCharacterLogout(pcId, player.selectedCharacterName)
+		_ = s.server.mainServerClient.Send(msg.GetBytes())
 	}
 
 	s.server.Logger.Info(fmt.Sprintf("Account %s disconnected", player.account))
