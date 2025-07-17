@@ -2,6 +2,7 @@ package shared
 
 import (
 	"context"
+	"runtime"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -60,32 +61,34 @@ func (sq *SafeQueue[T]) Enqueue(item T) bool {
 		return false
 	}
 
-	currentTail := atomic.LoadUint64(&sq.tail)
-	nextTail := currentTail + 1
+	for {
+		currentTail := atomic.LoadUint64(&sq.tail)
+		nextTail := currentTail + 1
 
-	// Check if queue is full
-	if nextTail-atomic.LoadUint64(&sq.head) > sq.size {
-		atomic.AddUint64(&sq.dropCount, 1)
-		return false
+		// Check if queue is full
+		if nextTail-atomic.LoadUint64(&sq.head) > sq.size {
+			atomic.AddUint64(&sq.dropCount, 1)
+			return false
+		}
+
+		// Try to claim the slot
+		if atomic.CompareAndSwapUint64(&sq.tail, currentTail, nextTail) {
+			// Store the item
+			sq.buffer[currentTail&sq.mask].Store(item)
+			atomic.AddUint64(&sq.enqueueCount, 1)
+
+			// Signal that queue is not empty
+			select {
+			case sq.notEmpty <- struct{}{}:
+			default:
+			}
+
+			return true
+		}
+
+		// Optional: yield to avoid busy-spin in high contention
+		runtime.Gosched()
 	}
-
-	// Try to claim the slot
-	if !atomic.CompareAndSwapUint64(&sq.tail, currentTail, nextTail) {
-		// Someone else got it, try again
-		return sq.Enqueue(item)
-	}
-
-	// Store the item
-	sq.buffer[currentTail&sq.mask].Store(item)
-	atomic.AddUint64(&sq.enqueueCount, 1)
-
-	// Signal that queue is not empty
-	select {
-	case sq.notEmpty <- struct{}{}:
-	default:
-	}
-
-	return true
 }
 
 // TryEnqueue attempts to enqueue with a timeout
@@ -117,33 +120,36 @@ func (sq *SafeQueue[T]) TryEnqueue(item T, timeout time.Duration) bool {
 // Returns the zero value and false if queue is empty
 func (sq *SafeQueue[T]) Dequeue() (T, bool) {
 	var zero T
-	currentHead := atomic.LoadUint64(&sq.head)
 
-	// Check if queue is empty
-	if currentHead >= atomic.LoadUint64(&sq.tail) {
-		return zero, false
+	for {
+		currentHead := atomic.LoadUint64(&sq.head)
+
+		// Check if queue is empty
+		if currentHead >= atomic.LoadUint64(&sq.tail) {
+			return zero, false
+		}
+
+		// Try to claim the slot
+		if atomic.CompareAndSwapUint64(&sq.head, currentHead, currentHead+1) {
+			// Get the item
+			slot := &sq.buffer[currentHead&sq.mask]
+			item := slot.Load().(T)
+			slot.Store(nil) // Clear reference for GC
+
+			atomic.AddUint64(&sq.dequeueCount, 1)
+
+			// Signal that queue is not full
+			select {
+			case sq.notFull <- struct{}{}:
+			default:
+			}
+
+			return item, true
+		}
+
+		// Optional: yield to avoid busy-spin in high contention
+		runtime.Gosched()
 	}
-
-	// Try to claim the slot
-	if !atomic.CompareAndSwapUint64(&sq.head, currentHead, currentHead+1) {
-		// Someone else got it, try again
-		return sq.Dequeue()
-	}
-
-	// Get the item
-	slot := &sq.buffer[currentHead&sq.mask]
-	item := slot.Load().(T)
-	slot.Store(nil) // Clear reference for GC
-
-	atomic.AddUint64(&sq.dequeueCount, 1)
-
-	// Signal that queue is not full
-	select {
-	case sq.notFull <- struct{}{}:
-	default:
-	}
-
-	return item, true
 }
 
 // DequeueBlocking blocks until an item is available or context is cancelled
@@ -216,7 +222,9 @@ func (sq *SafeQueue[T]) DrainAll() []T {
 		if !ok {
 			break
 		}
+
 		items = append(items, item)
 	}
+
 	return items
 }
