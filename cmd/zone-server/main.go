@@ -38,7 +38,11 @@ func main() {
 
 	zoneManager := zoneserver.NewZoneManager(cfg, db, logger, cacheService.(*redis.Client), serialNumberGenerator, players)
 	go func(z *zoneserver.ZoneManager) {
-		z.Start()
+		err := z.Start()
+		if err != nil {
+			logger.Error("Failed to start zone manager", shared.Field{Key: "error", Value: err})
+			panic(err)
+		}
 	}(zoneManager)
 
 	mainServerClient := zoneserver.NewMainServerClient(
