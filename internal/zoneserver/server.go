@@ -12,11 +12,11 @@ import (
 
 type Server struct {
 	network.TCPServer
-	Logger                shared.Logger
-	db                    db.DBService
-	mainServerClient      *MainServerClient
-	serialNumberGenerator shared.SerialNumberGenerator
-	players               *Players
+	Logger           shared.Logger
+	db               db.DBService
+	mainServerClient *MainServerClient
+	players          *Players
+	zoneManager      *ZoneManager
 }
 
 func NewServer(
@@ -24,8 +24,8 @@ func NewServer(
 	db db.DBService,
 	logger shared.Logger,
 	mainServerClient *MainServerClient,
-	serialNumberGenerator shared.SerialNumberGenerator,
 	players *Players,
+	zoneManager *ZoneManager,
 ) *Server {
 	server := &Server{
 		TCPServer: network.TCPServer{
@@ -35,10 +35,10 @@ func NewServer(
 			Logger:       logger,
 			Sessions:     shared.NewSafeMap[uint32, network.TCPServerSession](),
 		},
-		db:                    db,
-		mainServerClient:      mainServerClient,
-		serialNumberGenerator: serialNumberGenerator,
-		players:               players,
+		db:               db,
+		mainServerClient: mainServerClient,
+		players:          players,
+		zoneManager:      zoneManager,
 	}
 
 	server.NewSession = func(id uint32, conn net.Conn) network.TCPServerSession {

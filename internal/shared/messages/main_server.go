@@ -85,3 +85,46 @@ func ReadMsgM2SAnsCharacterLogin(packet []byte) (*MsgM2SAnsCharacterLogin, error
 
 	return &msg, nil
 }
+
+type MsgM2SWorldLogin struct {
+	MsgHeadMs
+	CharacterName [0x15]byte
+	MapId         uint16
+}
+
+func (msg *MsgM2SWorldLogin) GetSize() uint32 {
+	return uint32(binary.Size(msg))
+}
+
+func (msg *MsgM2SWorldLogin) SetSize() {
+	msg.Size = uint16(msg.GetSize())
+}
+
+func (msg *MsgM2SWorldLogin) GetBytes() []byte {
+	var buffer bytes.Buffer
+	_ = binary.Write(&buffer, binary.LittleEndian, msg)
+	return buffer.Bytes()
+}
+
+func NewMsgM2SWorldLogin(pcId uint32, characterName string, mapId uint16, gateServerId byte) *MsgM2SWorldLogin {
+	msg := MsgM2SWorldLogin{
+		MsgHeadMs: MsgHeadMs{
+			PcId:         pcId,
+			Protocol:     protocol.M2SWorldLogin,
+			GateServerId: gateServerId,
+		},
+		MapId: mapId,
+	}
+	copy(msg.CharacterName[:], utils.MakeFixedLengthStringBytes(characterName, 0x15))
+	msg.SetSize()
+	return &msg
+}
+
+func ReadMsgM2SWorldLogin(packet []byte) (*MsgM2SWorldLogin, error) {
+	var msg MsgM2SWorldLogin
+	if err := binary.Read(bytes.NewReader(packet), binary.LittleEndian, &msg); err != nil {
+		return nil, err
+	}
+
+	return &msg, nil
+}

@@ -21,6 +21,8 @@ type EnvVars struct {
 	CacheTlsEnabled     bool
 	CacheKeyPrefix      string
 	ZoneDataItemPath    string
+	ZoneDataNPCPath     string
+	ZoneDataMapPath     string
 	MainServerIpAddress string
 	MainServerPort      string
 	ServerId            byte
@@ -103,6 +105,20 @@ func New() *EnvVars {
 		}
 	}
 
+	if _, ok := os.LookupEnv("ZONE_DATA_NPC_PATH"); !ok {
+		err := os.Setenv("ZONE_DATA_NPC_PATH", "ZoneData/npc")
+		if err != nil {
+			slog.Info("Could not set default ZONE_DATA_NPC_PATH!")
+		}
+	}
+
+	if _, ok := os.LookupEnv("ZONE_DATA_MAP_PATH"); !ok {
+		err := os.Setenv("ZONE_DATA_MAP_PATH", "ZoneData/map")
+		if err != nil {
+			slog.Info("Could not set default ZONE_DATA_MAP_PATH!")
+		}
+	}
+
 	if _, ok := os.LookupEnv("MAIN_SERVER_IP_ADDRESS"); !ok {
 		err := os.Setenv("MAIN_SERVER_IP_ADDRESS", "127.0.0.1")
 		if err != nil {
@@ -158,6 +174,8 @@ func New() *EnvVars {
 		CacheTlsEnabled:     cacheTlsEnabled,
 		CacheKeyPrefix:      os.Getenv("CACHE_KEY_PREFIX"),
 		ZoneDataItemPath:    os.Getenv("ZONE_DATA_ITEM_PATH"),
+		ZoneDataNPCPath:     os.Getenv("ZONE_DATA_NPC_PATH"),
+		ZoneDataMapPath:     os.Getenv("ZONE_DATA_MAP_PATH"),
 		MainServerIpAddress: os.Getenv("MAIN_SERVER_IP_ADDRESS"),
 		MainServerPort:      os.Getenv("MAIN_SERVER_PORT"),
 		ServerId:            byte(serverId),

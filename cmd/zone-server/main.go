@@ -26,24 +26,33 @@ func main() {
 		os.Exit(1)
 	}
 
-	players := zoneserver.NewPlayers()
-	mainServerClient := zoneserver.NewMainServerClient(
-		cfg.ServerId,
-		cfg.MainServerIpAddress+":"+cfg.MainServerPort,
-		logger,
-		players,
-	)
-	go func(c *zoneserver.MainServerClient) {
-		c.Start()
-	}(mainServerClient)
-
 	cacheService := shared.NewRedisCacheService(cfg.CacheServerAddr, cfg.CacheServerPassword, cfg.CacheTlsEnabled)
+
 	serialNumberGenerator := shared.NewSerialNumberGenerator(
 		db.GetDB(),
 		cacheService.(*redis.Client),
 		fmt.Sprintf("zone-server-%d", cfg.ServerId),
 	)
-	server := zoneserver.NewServer(cfg, db, logger, mainServerClient, serialNumberGenerator, players)
+
+	players := zoneserver.NewPlayers()
+
+	zoneManager := zoneserver.NewZoneManager(cfg, db, logger, cacheService.(*redis.Client), serialNumberGenerator, players)
+	go func(z *zoneserver.ZoneManager) {
+		z.Start()
+	}(zoneManager)
+
+	mainServerClient := zoneserver.NewMainServerClient(
+		cfg.ServerId,
+		cfg.MainServerIpAddress+":"+cfg.MainServerPort,
+		logger,
+		players,
+		zoneManager,
+	)
+	go func(c *zoneserver.MainServerClient) {
+		c.Start()
+	}(mainServerClient)
+
+	server := zoneserver.NewServer(cfg, db, logger, mainServerClient, players, zoneManager)
 	go func(s *zoneserver.Server) {
 		err := s.Start()
 		if err != nil {
@@ -59,5 +68,6 @@ func main() {
 	server.Stop()
 	mainServerClient.Stop()
 	_ = cacheService.Close()
+	zoneManager.Stop()
 	_ = db.Close()
 }

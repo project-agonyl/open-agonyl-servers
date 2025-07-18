@@ -212,7 +212,8 @@ func (s *mainServerSession) processPacket(packet []byte) {
 		}
 
 		player.state = PlayerStateWorld
-		_ = s.Send(packet)
+		gsMsg := messages.NewMsgM2SWorldLogin(msg.PcId, characterName, player.currentMapId, msg.GateServerId)
+		_ = s.Send(gsMsg.GetBytes())
 	case protocol.S2MCharacterLogout:
 		msg, err := messages.ReadMsgS2MCharacterLogout(packet)
 		if err != nil {

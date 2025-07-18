@@ -1,12 +1,7 @@
 package zoneserver
 
 import (
-	"encoding/binary"
-
 	"github.com/project-agonyl/open-agonyl-servers/internal/shared"
-	"github.com/project-agonyl/open-agonyl-servers/internal/shared/messages"
-	"github.com/project-agonyl/open-agonyl-servers/internal/shared/messages/protocol"
-	"github.com/project-agonyl/open-agonyl-servers/internal/utils"
 )
 
 type PlayerState int
@@ -22,6 +17,7 @@ type Player struct {
 	characterName     string
 	gateServerSession *zoneServerSession
 	logger            shared.Logger
+	zone              *Zone
 }
 
 func NewPlayer(
@@ -30,6 +26,7 @@ func NewPlayer(
 	characterName string,
 	gateServerSession *zoneServerSession,
 	logger shared.Logger,
+	zone *Zone,
 ) *Player {
 	return &Player{
 		pcId:              pcId,
@@ -37,6 +34,7 @@ func NewPlayer(
 		characterName:     characterName,
 		gateServerSession: gateServerSession,
 		logger:            logger,
+		zone:              zone,
 	}
 }
 
@@ -45,12 +43,11 @@ func (p *Player) HandleGateServerPacket(packet []byte) {
 		return
 	}
 
-	proto := binary.LittleEndian.Uint16(packet[10:])
-	switch proto {
-	default:
+	if !p.zone.EnqueuePlayerPacket(packet) {
 		p.logger.Error(
-			"Unhandled gate server packet",
-			shared.Field{Key: "protocol", Value: proto},
+			"Failed to enqueue player packet",
+			shared.Field{Key: "playerId", Value: p.pcId},
+			shared.Field{Key: "packet", Value: packet},
 		)
 	}
 }
@@ -60,20 +57,11 @@ func (p *Player) HandleMainServerPacket(packet []byte) {
 		return
 	}
 
-	proto := binary.LittleEndian.Uint16(packet)
-	switch proto {
-	case protocol.M2SError:
-		msg, err := messages.ReadMsgM2SError(packet)
-		if err != nil {
-			return
-		}
-
-		message := utils.ReadStringFromBytes(msg.Msg[:])
-		_ = p.gateServerSession.SendErrorMsg(p.pcId, msg.Code, message)
-	default:
+	if !p.zone.EnqueueMainServerPacket(packet) {
 		p.logger.Error(
-			"Unhandled main server packet",
-			shared.Field{Key: "protocol", Value: proto},
+			"Failed to enqueue main server packet",
+			shared.Field{Key: "playerId", Value: p.pcId},
+			shared.Field{Key: "packet", Value: packet},
 		)
 	}
 }

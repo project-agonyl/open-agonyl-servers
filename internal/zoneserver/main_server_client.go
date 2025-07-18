@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"github.com/project-agonyl/open-agonyl-servers/internal/shared"
+	"github.com/project-agonyl/open-agonyl-servers/internal/shared/messages"
+	"github.com/project-agonyl/open-agonyl-servers/internal/shared/messages/protocol"
 )
 
 type MainServerClient struct {
@@ -25,15 +27,17 @@ type MainServerClient struct {
 	reconnectDelay  time.Duration
 	isConnected     bool
 	players         *Players
+	zoneManager     *ZoneManager
 }
 
-func NewMainServerClient(serverId byte, addr string, logger shared.Logger, players *Players) *MainServerClient {
+func NewMainServerClient(serverId byte, addr string, logger shared.Logger, players *Players, zoneManager *ZoneManager) *MainServerClient {
 	return &MainServerClient{
 		serverId:    serverId,
 		addr:        addr,
 		logger:      logger,
 		players:     players,
 		isConnected: false,
+		zoneManager: zoneManager,
 	}
 }
 
@@ -161,6 +165,21 @@ func (c *MainServerClient) sender() {
 
 func (c *MainServerClient) processPacket(packet []byte) {
 	proto := binary.LittleEndian.Uint16(packet)
+	if proto == protocol.M2SWorldLogin {
+		msg, err := messages.ReadMsgM2SWorldLogin(packet)
+		if err != nil {
+			c.logger.Error(
+				"Failed to read M2SWorldLogin message",
+				shared.Field{Key: "error", Value: err},
+				shared.Field{Key: "packet", Value: packet},
+			)
+			return
+		}
+
+		c.zoneManager.EnqueueMainServerPacket(msg.MapId, packet)
+		return
+	}
+
 	pcId := binary.LittleEndian.Uint32(packet[4:])
 	player, exists := c.players.Get(pcId)
 	if !exists {
