@@ -152,3 +152,48 @@ func ReadMsgS2MCharacterLogout(packet []byte) (*MsgS2MCharacterLogout, error) {
 
 	return &msg, nil
 }
+
+type AclCharacterWear struct {
+	ItemPtr    uint32
+	ItemCode   uint32
+	ItemOption uint32
+	WearIndex  uint32
+}
+
+type Item struct {
+	ItemCode       uint32
+	ItemOption     uint32
+	ItemUniqueCode uint32
+}
+
+type CharacterWear struct {
+	ItemPtr   uint32
+	Item      Item
+	WearIndex uint32
+}
+
+type CharacterInventory struct {
+	ItemPtr uint32
+	Item    Item
+	Slot    uint32
+}
+
+type SkillInfo struct {
+	LevelOneSkills   uint32
+	LevelTwoSkills   uint32
+	LevelThreeSkills uint32
+}
+
+type SocialInfo struct {
+	KHRank uint32
+	KHId   uint32
+	Nation uint32
+}
+
+type Pet struct {
+	PetPtr        uint32
+	PetCode       uint32
+	Option1       uint32
+	Option2       uint32
+	PetUniqueCode uint32
+}

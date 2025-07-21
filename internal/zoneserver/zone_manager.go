@@ -149,7 +149,7 @@ func (m *ZoneManager) GetZone(mapId uint16) *Zone {
 }
 
 func (m *ZoneManager) GetZoneByPlayer(player *Player) *Zone {
-	return m.zones[player.zone.mapId]
+	return m.zones[player.Zone.mapId]
 }
 
 func (m *ZoneManager) GetZoneByPlayerId(playerId uint32) *Zone {
@@ -158,7 +158,7 @@ func (m *ZoneManager) GetZoneByPlayerId(playerId uint32) *Zone {
 		return nil
 	}
 
-	return m.zones[player.zone.mapId]
+	return m.zones[player.Zone.mapId]
 }
 
 func (m *ZoneManager) GetNPCData(npcId uint16) (*data.NPCData, error) {

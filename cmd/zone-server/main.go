@@ -51,6 +51,7 @@ func main() {
 		logger,
 		players,
 		zoneManager,
+		db,
 	)
 	go func(c *zoneserver.MainServerClient) {
 		c.Start()

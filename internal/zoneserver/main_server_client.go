@@ -12,6 +12,8 @@ import (
 	"github.com/project-agonyl/open-agonyl-servers/internal/shared"
 	"github.com/project-agonyl/open-agonyl-servers/internal/shared/messages"
 	"github.com/project-agonyl/open-agonyl-servers/internal/shared/messages/protocol"
+	"github.com/project-agonyl/open-agonyl-servers/internal/utils"
+	"github.com/project-agonyl/open-agonyl-servers/internal/zoneserver/db"
 )
 
 type MainServerClient struct {
@@ -28,9 +30,17 @@ type MainServerClient struct {
 	isConnected     bool
 	players         *Players
 	zoneManager     *ZoneManager
+	db              db.DBService
 }
 
-func NewMainServerClient(serverId byte, addr string, logger shared.Logger, players *Players, zoneManager *ZoneManager) *MainServerClient {
+func NewMainServerClient(
+	serverId byte,
+	addr string,
+	logger shared.Logger,
+	players *Players,
+	zoneManager *ZoneManager,
+	db db.DBService,
+) *MainServerClient {
 	return &MainServerClient{
 		serverId:    serverId,
 		addr:        addr,
@@ -38,6 +48,7 @@ func NewMainServerClient(serverId byte, addr string, logger shared.Logger, playe
 		players:     players,
 		isConnected: false,
 		zoneManager: zoneManager,
+		db:          db,
 	}
 }
 
@@ -165,7 +176,18 @@ func (c *MainServerClient) sender() {
 
 func (c *MainServerClient) processPacket(packet []byte) {
 	proto := binary.LittleEndian.Uint16(packet)
+	pcId := binary.LittleEndian.Uint32(packet[4:])
+	player, exists := c.players.Get(pcId)
 	if proto == protocol.M2SWorldLogin {
+		if exists {
+			c.logger.Error(
+				"Player already logged in",
+				shared.Field{Key: "pcId", Value: pcId},
+				shared.Field{Key: "protocol", Value: proto},
+			)
+			return
+		}
+
 		msg, err := messages.ReadMsgM2SWorldLogin(packet)
 		if err != nil {
 			c.logger.Error(
@@ -176,12 +198,99 @@ func (c *MainServerClient) processPacket(packet []byte) {
 			return
 		}
 
-		c.zoneManager.EnqueueMainServerPacket(msg.MapId, packet)
+		characterName := utils.ReadStringFromBytes(msg.CharacterName[:])
+		characterData, err := c.db.GetCharacter(pcId, characterName)
+		if err != nil {
+			c.logger.Error(
+				"Failed to get character",
+				shared.Field{Key: "error", Value: err},
+				shared.Field{Key: "characterName", Value: characterName},
+				shared.Field{Key: "pcId", Value: pcId},
+			)
+			return
+		}
+
+		player := NewPlayer(
+			pcId,
+			characterData.Account,
+			characterName,
+			nil,
+			c.logger,
+			c.zoneManager.GetZone(msg.MapId),
+		)
+		player.Class = characterData.Class
+		player.Level = characterData.Level
+		player.Lore = characterData.Data.Lore
+		player.Woonz = characterData.Data.Parole
+		player.SocialInfo = SocialInfo{
+			Nation: characterData.Data.SocialInfo.Nation,
+		}
+		player.Location = Location{
+			MapId: characterData.Data.Location.MapCode,
+			X:     characterData.Data.Location.Position.X,
+			Y:     characterData.Data.Location.Position.Y,
+		}
+		player.Stats = Stats{
+			RemainingPoints: characterData.Data.Stats.RemainingPoints,
+			Strength:        characterData.Data.Stats.Strength,
+			Intelligence:    characterData.Data.Stats.Intelligence,
+			Dexterity:       characterData.Data.Stats.Dexterity,
+			Vitality:        characterData.Data.Stats.Vitality,
+			Mana:            characterData.Data.Stats.Mana,
+			HPCapacity:      characterData.Data.Stats.HPCapacity,
+			MPCapacity:      characterData.Data.Stats.MPCapacity,
+			HP:              characterData.Data.Stats.HP,
+			MP:              characterData.Data.Stats.MP,
+		}
+		player.Wear = make([]WearItem, len(characterData.Data.Wear))
+		for i, wearItem := range characterData.Data.Wear {
+			player.Wear[i] = WearItem{
+				ItemCode:       wearItem.ItemCode,
+				ItemOption:     wearItem.ItemOption,
+				ItemUniqueCode: wearItem.ItemUniqueCode,
+			}
+		}
+		player.Inventory = make([]InventoryItem, len(characterData.Data.Inventory))
+		for i, invItem := range characterData.Data.Inventory {
+			player.Inventory[i] = InventoryItem{
+				ItemCode:       invItem.ItemCode,
+				ItemOption:     invItem.ItemOption,
+				ItemUniqueCode: invItem.ItemUniqueCode,
+				Slot:           invItem.Slot,
+			}
+		}
+		player.Skills = make([]Skill, len(characterData.Data.Skills))
+		for i, skill := range characterData.Data.Skills {
+			player.Skills[i] = Skill{
+				Id:    skill.SkillID,
+				Level: skill.Level,
+			}
+		}
+		player.ActivePet = Pet{
+			PetCode:       characterData.Data.ActivePet.PetCode,
+			PetHP:         characterData.Data.ActivePet.PetHP,
+			PetOption:     characterData.Data.ActivePet.PetOption,
+			PetUniqueCode: characterData.Data.ActivePet.PetUniqueCode,
+		}
+		player.PetInventory = make([]PetInventory, len(characterData.Data.PetInventory))
+		for i, petInv := range characterData.Data.PetInventory {
+			player.PetInventory[i] = PetInventory{
+				Pet: Pet{
+					PetCode:       petInv.PetCode,
+					PetHP:         petInv.PetHP,
+					PetOption:     petInv.PetOption,
+					PetUniqueCode: petInv.PetUniqueCode,
+				},
+				Slot: petInv.Slot,
+			}
+		}
+
+		player.Zone.EnqueuePlayerLogin(pcId)
+		player.State = PlayerStateWorldLoginSuccess
+		c.players.Add(player)
 		return
 	}
 
-	pcId := binary.LittleEndian.Uint32(packet[4:])
-	player, exists := c.players.Get(pcId)
 	if !exists {
 		c.logger.Error(
 			"Could not find player",

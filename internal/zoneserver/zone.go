@@ -23,6 +23,7 @@ type Zone struct {
 	isRunning             atomic.Bool
 	playerPacketQueue     *shared.SafeQueue[[]byte]
 	mainServerPacketQueue *shared.SafeQueue[[]byte]
+	playerLoginQueue      *shared.SafeQueue[uint32]
 }
 
 func NewZone(
@@ -50,6 +51,7 @@ func NewZone(
 		mapData:               mapData,
 		playerPacketQueue:     shared.NewSafeQueue[[]byte](4096),
 		mainServerPacketQueue: shared.NewSafeQueue[[]byte](4096),
+		playerLoginQueue:      shared.NewSafeQueue[uint32](4096),
 	}, nil
 }
 
@@ -70,6 +72,10 @@ func (z *Zone) EnqueuePlayerPacket(packet []byte) bool {
 
 func (z *Zone) EnqueueMainServerPacket(packet []byte) bool {
 	return z.mainServerPacketQueue.Enqueue(packet)
+}
+
+func (z *Zone) EnqueuePlayerLogin(pcId uint32) bool {
+	return z.playerLoginQueue.Enqueue(pcId)
 }
 
 func (z *Zone) Stop() {

@@ -13,7 +13,7 @@ func NewPlayers() *Players {
 }
 
 func (p *Players) Add(player *Player) {
-	p.players.Set(player.pcId, player)
+	p.players.Set(player.PcId, player)
 }
 
 func (p *Players) Remove(id uint32) {
@@ -31,7 +31,7 @@ func (p *Players) HasPlayer(id uint32) bool {
 
 func (p *Players) GetByCharacterName(characterName string) (player *Player, exists bool) {
 	p.players.Range(func(key uint32, value *Player) bool {
-		if value.characterName == characterName {
+		if value.CharacterName == characterName {
 			player = value
 			exists = true
 			return false
@@ -45,7 +45,7 @@ func (p *Players) GetByCharacterName(characterName string) (player *Player, exis
 
 func (p *Players) GetByAccount(account string) (player *Player, exists bool) {
 	p.players.Range(func(key uint32, value *Player) bool {
-		if value.account == account {
+		if value.Account == account {
 			player = value
 			exists = true
 			return false

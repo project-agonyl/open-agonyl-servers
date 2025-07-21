@@ -44,8 +44,17 @@ func (s *dbService) Close() error {
 
 func (s *dbService) GetCharacter(id uint32, name string) (*Character, error) {
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
-	qb := psql.Select("id", "name", "class", "level", "character_data").
+	qb := psql.Select(
+		"characters.id",
+		"characters.name",
+		"characters.class",
+		"characters.level",
+		"characters.character_data",
+		"accounts.username as account",
+	).
 		From("characters").
+		LeftJoin("accounts ON accounts.id = characters.account_id").
+		LeftJoin("characters_accounts ON characters_accounts.character_id = characters.id").
 		Where(sq.And{
 			sq.Eq{"account_id": id},
 			sq.Eq{"status": constants.CharacterStatusActive},
@@ -70,11 +79,12 @@ func (s *dbService) GetCharacter(id uint32, name string) (*Character, error) {
 }
 
 type Character struct {
-	ID    uint32        `db:"id"`
-	Name  string        `db:"name"`
-	Class byte          `db:"class"`
-	Level uint32        `db:"level"`
-	Data  CharacterData `db:"character_data"`
+	ID      uint32        `db:"id"`
+	Name    string        `db:"name"`
+	Class   byte          `db:"class"`
+	Level   uint16        `db:"level"`
+	Account string        `db:"account"`
+	Data    CharacterData `db:"character_data"`
 }
 
 type CharacterData struct {
@@ -141,8 +151,8 @@ type QuestInfo struct {
 }
 
 type SkillInfo struct {
-	SkillID uint32 `json:"skill_id"`
-	Level   uint32 `json:"level"`
+	SkillID byte `json:"skill_id"`
+	Level   byte `json:"level"`
 }
 
 type Stats struct {

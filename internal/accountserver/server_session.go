@@ -187,7 +187,7 @@ func (s *accountServerSession) handleCharacterListing(packet []byte) {
 				continue
 			}
 
-			characterList[i].Wear[j] = messages.CharacterWear{
+			characterList[i].Wear[j] = messages.AclCharacterWear{
 				ItemPtr:    0,
 				ItemCode:   character.Data.Wear[j].ItemCode,
 				ItemOption: character.Data.Wear[j].ItemOption,
@@ -403,7 +403,7 @@ func (s *accountServerSession) handleCharacterCreate(packet []byte) {
 		return
 	}
 
-	wear := [0xA]messages.CharacterWear{}
+	wear := [0xA]messages.AclCharacterWear{}
 	for i := 0; i < len(data.Wear); i++ {
 		if i > 9 {
 			break
@@ -414,7 +414,7 @@ func (s *accountServerSession) handleCharacterCreate(packet []byte) {
 			continue
 		}
 
-		wear[i] = messages.CharacterWear{
+		wear[i] = messages.AclCharacterWear{
 			ItemPtr:    0,
 			ItemCode:   data.Wear[i].ItemCode,
 			ItemOption: data.Wear[i].ItemOption,

@@ -8,20 +8,13 @@ import (
 	"github.com/project-agonyl/open-agonyl-servers/internal/utils"
 )
 
-type CharacterWear struct {
-	ItemPtr    uint32
-	ItemCode   uint32
-	ItemOption uint32
-	WearIndex  uint32
-}
-
 type CharacterInfo struct {
 	Name     [0x15]byte
 	SlotUsed byte
 	Class    byte
 	Nation   byte
 	Level    uint32
-	Wear     [0xA]CharacterWear
+	Wear     [0xA]AclCharacterWear
 }
 
 type MsgS2CCharacterList struct {
@@ -102,7 +95,7 @@ type MsgS2CAnsCreatePlayer struct {
 	MsgHead
 	Class byte
 	Name  [0x15]byte
-	Wear  [0xA]CharacterWear
+	Wear  [0xA]AclCharacterWear
 }
 
 func (msg *MsgS2CAnsCreatePlayer) GetSize() uint32 {
@@ -119,7 +112,7 @@ func (msg *MsgS2CAnsCreatePlayer) GetBytes() []byte {
 	return buffer.Bytes()
 }
 
-func NewMsgS2CAnsCreatePlayer(pcId uint32, class byte, name string, wear [0xA]CharacterWear) *MsgS2CAnsCreatePlayer {
+func NewMsgS2CAnsCreatePlayer(pcId uint32, class byte, name string, wear [0xA]AclCharacterWear) *MsgS2CAnsCreatePlayer {
 	msg := MsgS2CAnsCreatePlayer{
 		MsgHead: MsgHead{
 			Protocol:          protocol.S2CAnsCreatePlayer,
